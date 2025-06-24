@@ -1,10 +1,12 @@
 import { supabase, TABLES } from '../config/supabase';
 import { localStorageUtils } from '../utils/localStorage';
+import { syncService } from './syncService';
 import type { Expense, Category, ExpenseSummary, CategorySummary, FilterOptions } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
 class ExpenseService {
   private isOnline = navigator.onLine;
+  private forceOfflineMode = false;
 
   constructor() {
     // Listen for online/offline events
@@ -18,6 +20,16 @@ class ExpenseService {
     });
   }
 
+  // Method to set offline mode preference
+  setOfflineMode(offline: boolean): void {
+    this.forceOfflineMode = offline;
+    console.log('ExpenseService offline mode set to:', offline);
+  }
+
+  private get shouldUseOfflineMode(): boolean {
+    return !this.isOnline || this.forceOfflineMode;
+  }
+
   private async isAuthenticated(): Promise<boolean> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -28,8 +40,8 @@ class ExpenseService {
     }
   }async getExpenses(filters?: FilterOptions): Promise<Expense[]> {
     try {
-      // Only try Supabase if online AND authenticated
-      if (this.isOnline && await this.isAuthenticated()) {
+      // Only try Supabase if not in offline mode AND authenticated
+      if (!this.shouldUseOfflineMode && await this.isAuthenticated()) {
         // RLS policies will automatically filter by authenticated user
         const { data, error } = await supabase
           .from(TABLES.EXPENSES)
@@ -46,11 +58,10 @@ class ExpenseService {
     // Fallback to localStorage for offline mode or when not authenticated
     const expenses = localStorageUtils.getExpenses();
     return this.applyFilters(expenses, filters);
-  }
-  async addExpense(expenseData: Omit<Expense, 'id' | 'created_at' | 'updated_at'>): Promise<Expense> {
+  }  async addExpense(expenseData: Omit<Expense, 'id' | 'created_at' | 'updated_at' | 'user_id'>): Promise<Expense> {
     console.log('expenseService: Adding expense', expenseData);
     
-    const expense: Expense = {
+    const expense: Omit<Expense, 'user_id'> = {
       id: uuidv4(),
       ...expenseData,
       created_at: new Date().toISOString(),
@@ -60,14 +71,27 @@ class ExpenseService {
     console.log('expenseService: Created expense object', expense);
 
     try {
-      // Only try Supabase if online AND authenticated
-      if (this.isOnline && await this.isAuthenticated()) {
+      // Only try Supabase if not in offline mode AND authenticated
+      if (!this.shouldUseOfflineMode && await this.isAuthenticated()) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const expenseWithUserId = {
+          ...expense,
+          user_id: user.id
+        };
+
         const { error } = await supabase
           .from(TABLES.EXPENSES)
-          .insert([expense]);
+          .insert([expenseWithUserId]);
 
         if (error) throw error;
         console.log('expenseService: Expense saved to Supabase');
+        
+        // Return the expense with user_id for consistency
+        const fullExpense: Expense = expenseWithUserId;
+        localStorageUtils.addExpense(fullExpense);
+        return fullExpense;
       } else {
         console.log('expenseService: Saving expense to localStorage (offline mode)');
       }
@@ -75,15 +99,18 @@ class ExpenseService {
       console.log('expenseService: Error with Supabase, using localStorage:', error);
     }
 
-    // Always save to localStorage as backup or primary storage
+    // For offline mode, we create expense without user_id (will be added during sync)
+    const offlineExpense: Expense = {
+      ...expense,
+      user_id: 'offline' // Placeholder that will be replaced during sync
+    };
+    
     console.log('expenseService: Calling localStorage.addExpense');
-    localStorageUtils.addExpense(expense);
+    localStorageUtils.addExpense(offlineExpense);
     console.log('expenseService: Expense saved successfully');
-    return expense;
-  }
-
-  async addMultipleExpenses(expensesData: Omit<Expense, 'id' | 'created_at' | 'updated_at'>[]): Promise<Expense[]> {
-    const expenses: Expense[] = expensesData.map(expenseData => ({
+    return offlineExpense;
+  }  async addMultipleExpenses(expensesData: Omit<Expense, 'id' | 'created_at' | 'updated_at' | 'user_id'>[]): Promise<Expense[]> {
+    const baseExpenses = expensesData.map(expenseData => ({
       id: uuidv4(),
       ...expenseData,
       created_at: new Date().toISOString(),
@@ -91,14 +118,26 @@ class ExpenseService {
     }));
 
     try {
-      // Only try Supabase if online AND authenticated
-      if (this.isOnline && await this.isAuthenticated()) {
+      // Only try Supabase if not in offline mode AND authenticated
+      if (!this.shouldUseOfflineMode && await this.isAuthenticated()) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        const expensesWithUserId = baseExpenses.map(expense => ({
+          ...expense,
+          user_id: user.id
+        }));
+
         const { error } = await supabase
           .from(TABLES.EXPENSES)
-          .insert(expenses);
+          .insert(expensesWithUserId);
 
         if (error) throw error;
         console.log('Multiple expenses saved to Supabase');
+        
+        // Save to localStorage and return
+        localStorageUtils.addMultipleExpenses(expensesWithUserId);
+        return expensesWithUserId;
       } else {
         console.log('Saving multiple expenses to localStorage (offline mode)');
       }
@@ -106,19 +145,24 @@ class ExpenseService {
       console.log('Error with Supabase, using localStorage:', error);
     }
 
+    // For offline mode, add placeholder user_id
+    const offlineExpenses = baseExpenses.map(expense => ({
+      ...expense,
+      user_id: 'offline' // Placeholder that will be replaced during sync
+    }));
+
     // Always save to localStorage as backup or primary storage
-    localStorageUtils.addMultipleExpenses(expenses);
-    return expenses;
-  }
-  async updateExpense(expense: Expense): Promise<Expense> {
+    localStorageUtils.addMultipleExpenses(offlineExpenses);
+    return offlineExpenses;
+  }async updateExpense(expense: Expense): Promise<Expense> {
     const updatedExpense = {
       ...expense,
       updated_at: new Date().toISOString(),
     };
 
     try {
-      // Only try Supabase if online AND authenticated
-      if (this.isOnline && await this.isAuthenticated()) {
+      // Only try Supabase if not in offline mode AND authenticated
+      if (!this.shouldUseOfflineMode && await this.isAuthenticated()) {
         const { error } = await supabase
           .from(TABLES.EXPENSES)
           .update(updatedExpense)
@@ -136,11 +180,10 @@ class ExpenseService {
     localStorageUtils.updateExpense(updatedExpense);
     return updatedExpense;
   }
-
   async deleteExpense(expenseId: string): Promise<void> {
     try {
-      // Only try Supabase if online AND authenticated
-      if (this.isOnline && await this.isAuthenticated()) {
+      // Only try Supabase if not in offline mode AND authenticated
+      if (!this.shouldUseOfflineMode && await this.isAuthenticated()) {
         const { error } = await supabase
           .from(TABLES.EXPENSES)
           .delete()
@@ -156,11 +199,10 @@ class ExpenseService {
     }
 
     localStorageUtils.deleteExpense(expenseId);
-  }
-  async getCategories(): Promise<Category[]> {
+  }async getCategories(): Promise<Category[]> {
     try {
-      // Categories are usually public, but we'll check if authenticated for consistency
-      if (this.isOnline) {
+      // Only try Supabase if not in offline mode AND authenticated
+      if (!this.shouldUseOfflineMode && await this.isAuthenticated()) {
         const { data, error } = await supabase
           .from(TABLES.CATEGORIES)
           .select('*')
@@ -169,7 +211,10 @@ class ExpenseService {
         if (error) throw error;
         if (data && data.length > 0) {
           console.log('Categories loaded from Supabase');
-          return data;
+          // Merge with localStorage categories to include any offline-created ones
+          const localCategories = localStorageUtils.getCategories();
+          const mergedCategories = this.mergeCategories(data, localCategories);
+          return mergedCategories;
         }
       }
     } catch (error) {
@@ -178,6 +223,26 @@ class ExpenseService {
 
     console.log('Using localStorage categories (offline mode)');
     return localStorageUtils.getCategories();
+  }
+  private mergeCategories(supabaseCategories: Category[], localCategories: Category[]): Category[] {
+    const mergedMap = new Map<string, Category>();
+    const nameSet = new Set<string>();
+    
+    // Add Supabase categories first (these are the "source of truth")
+    supabaseCategories.forEach(cat => {
+      mergedMap.set(cat.id, cat);
+      nameSet.add(cat.name.toLowerCase());
+    });
+    
+    // Add local categories that don't exist in Supabase (by ID OR name)
+    localCategories.forEach(cat => {
+      if (!mergedMap.has(cat.id) && !nameSet.has(cat.name.toLowerCase())) {
+        mergedMap.set(cat.id, cat);
+        nameSet.add(cat.name.toLowerCase());
+      }
+    });
+    
+    return Array.from(mergedMap.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   async getExpenseSummary(filters?: FilterOptions): Promise<ExpenseSummary> {
@@ -204,7 +269,6 @@ class ExpenseService {
       categoryBreakdown: categoryBreakdown.sort((a, b) => b.totalAmount - a.totalAmount),
     };
   }
-
   async createCategory(categoryData: Omit<Category, 'id'>): Promise<Category> {
     const newCategory: Category = {
       id: uuidv4(),
@@ -212,8 +276,8 @@ class ExpenseService {
     };
 
     try {
-      // Only try Supabase if online AND authenticated
-      if (this.isOnline && await this.isAuthenticated()) {
+      // Only try Supabase if not in offline mode AND authenticated
+      if (!this.shouldUseOfflineMode && await this.isAuthenticated()) {
         const { data, error } = await supabase
           .from(TABLES.CATEGORIES)
           .insert([newCategory])
@@ -232,6 +296,42 @@ class ExpenseService {
     console.log('Creating category in localStorage (offline mode)');
     localStorageUtils.addCategory(newCategory);
     return newCategory;
+  }
+  async manualSync(): Promise<{ success: boolean; syncedExpenses: number; syncedCategories: number; errors: string[] }> {
+    try {
+      console.log('Manual sync requested');
+      
+      if (this.shouldUseOfflineMode) {
+        throw new Error('Cannot sync while in offline mode');
+      }
+
+      if (!await this.isAuthenticated()) {
+        throw new Error('User must be authenticated to sync data');
+      }
+
+      const syncResult = await syncService.syncOfflineDataToOnline();
+      
+      if (syncResult.success) {
+        console.log('Manual sync completed successfully');
+        // Trigger UI refresh
+        window.dispatchEvent(new CustomEvent('dataSync', { 
+          detail: syncResult 
+        }));
+      }
+      
+      return syncResult;
+    } catch (error) {
+      console.error('Manual sync failed:', error);
+      throw error;
+    }
+  }
+
+  async hasUnsyncedData(): Promise<boolean> {
+    return await syncService.hasUnsyncedData();
+  }
+
+  getLastSyncTimestamp(): string | null {
+    return syncService.getLastSyncTimestamp();
   }
 
   private applyFilters(expenses: Expense[], filters?: FilterOptions): Expense[] {
@@ -274,11 +374,47 @@ class ExpenseService {
 
     return filteredExpenses;
   }
-
   private async syncWithSupabase(): Promise<void> {
-    // This method would handle syncing local data with Supabase when coming back online
-    // For now, we'll keep it simple and just fetch from Supabase
-    console.log('Back online - syncing with Supabase');
+    try {
+      console.log('Back online - checking for data to sync');
+      
+      // Check if user is authenticated
+      if (!await this.isAuthenticated()) {
+        console.log('User not authenticated, skipping sync');
+        return;
+      }
+
+      // Check if there's unsynced data
+      const hasUnsyncedData = await syncService.hasUnsyncedData();
+      if (!hasUnsyncedData) {
+        console.log('No unsynced data found');
+        return;
+      }
+
+      console.log('Found unsynced offline data, starting sync...');
+      const syncResult = await syncService.syncOfflineDataToOnline();
+      
+      if (syncResult.success) {
+        console.log('✅ Sync completed successfully:', {
+          expenses: syncResult.syncedExpenses,
+          categories: syncResult.syncedCategories
+        });
+        
+        // Optionally trigger a refresh in the UI
+        window.dispatchEvent(new CustomEvent('dataSync', { 
+          detail: syncResult 
+        }));
+      } else {
+        console.error('❌ Sync failed:', syncResult.errors);
+        
+        // Optionally show user notification about sync failure
+        window.dispatchEvent(new CustomEvent('dataSyncError', { 
+          detail: syncResult.errors 
+        }));
+      }
+    } catch (error) {
+      console.error('Error during sync process:', error);
+    }
   }
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useRecoveryMode } from './hooks/useRecoveryMode';
+import { expenseService } from './services/expenseService';
 import ExpenseForm from './components/ExpenseForm';
 import BulkExpenseForm from './components/BulkExpenseForm';
 import ExpenseList from './components/ExpenseList';
@@ -14,6 +15,7 @@ import Profile from './components/Profile';
 import Budget from './components/Budget';
 import BudgetPieChart from './components/BudgetPieChart';
 import ModeStatus from './components/ModeStatus';
+import SyncStatus from './components/SyncStatus';
 // import SupabaseTest from './components/SupabaseTest';
 import './App.css';
 
@@ -30,8 +32,13 @@ function App() {
   const [showProfile, setShowProfile] = useState(false);
   const [showUpdatePassword, setShowUpdatePassword] = useState(false);
   const [highlightCategory, setHighlightCategory] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState<'budget' | 'expenses' | 'analytics'>('budget');
+  const [currentPage, setCurrentPage] = useState<'analytics' | 'expenses' | 'budget'>('analytics');
   const settingsDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Update expense service when offline mode changes
+  useEffect(() => {
+    expenseService.setOfflineMode(useOfflineMode);
+  }, [useOfflineMode]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -267,13 +274,15 @@ function App() {
             isAuthenticated={!!user} 
           />
           
+          <SyncStatus />
+          
           {/* Navigation Tabs */}
           <nav className="page-navigation">
             <button 
-              className={`nav-tab ${currentPage === 'budget' ? 'active' : ''}`}
-              onClick={() => setCurrentPage('budget')}
+              className={`nav-tab ${currentPage === 'analytics' ? 'active' : ''}`}
+              onClick={() => setCurrentPage('analytics')}
             >
-              📊 Budget Overview
+              � Analytics
             </button>
             <button 
               className={`nav-tab ${currentPage === 'expenses' ? 'active' : ''}`}
@@ -282,18 +291,27 @@ function App() {
               ➕ Add Expenses
             </button>
             <button 
-              className={`nav-tab ${currentPage === 'analytics' ? 'active' : ''}`}
-              onClick={() => setCurrentPage('analytics')}
+              className={`nav-tab ${currentPage === 'budget' ? 'active' : ''}`}
+              onClick={() => setCurrentPage('budget')}
             >
-              📈 Analytics
+              � Budget Overview
             </button>
           </nav>
 
           {/* Page Content Based on Current Page */}
-          {currentPage === 'budget' && (
-            <div className="page-content budget-page">
-              <Budget refreshTrigger={refreshTrigger} />
-              <BudgetPieChart refreshTrigger={refreshTrigger} />
+          {currentPage === 'analytics' && (
+            <div className="page-content analytics-page">
+              <ExpenseChart refreshTrigger={refreshTrigger} />
+              
+              <ExpenseSummary 
+                refreshTrigger={refreshTrigger} 
+                onCategoryClick={handleCategoryClick}
+              />
+              
+              <ExpenseList 
+                refreshTrigger={refreshTrigger} 
+                highlightCategory={highlightCategory}
+              />
             </div>
           )}
 
@@ -312,22 +330,18 @@ function App() {
                 </div>
                 <ExpenseForm onExpenseAdded={handleExpenseAdded} />
               </div>
-            </div>
-          )}
-
-          {currentPage === 'analytics' && (
-            <div className="page-content analytics-page">
-              <ExpenseSummary 
-                refreshTrigger={refreshTrigger} 
-                onCategoryClick={handleCategoryClick}
-              />
               
               <ExpenseList 
                 refreshTrigger={refreshTrigger} 
                 highlightCategory={highlightCategory}
               />
-              
-              <ExpenseChart refreshTrigger={refreshTrigger} />
+            </div>
+          )}
+
+          {currentPage === 'budget' && (
+            <div className="page-content budget-page">
+              <BudgetPieChart refreshTrigger={refreshTrigger} />
+              <Budget refreshTrigger={refreshTrigger} />
             </div>
           )}
         </div>

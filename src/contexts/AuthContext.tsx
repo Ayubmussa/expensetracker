@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { authService } from '../services/authService';
+import { expenseService } from '../services/expenseService';
 import { AuthContext, type AuthContextType } from './AuthContext';
 import type { AuthState, User } from '../types';
 
@@ -13,6 +14,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     loading: true,
     error: null,
   });
+  const previousUserRef = useRef<User | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -63,15 +65,39 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     };
 
-    checkUser();// Listen for auth changes
-    const { data: { subscription } } = authService.onAuthStateChange((user: User | null) => {
+    checkUser();    // Listen for auth changes
+    const { data: { subscription } } = authService.onAuthStateChange(async (user: User | null) => {
       if (mounted) {
         clearTimeout(loadingTimeout);
+        const previousUser = previousUserRef.current;
+        previousUserRef.current = user;
+        
         setAuthState(prev => ({
           ...prev,
           user,
           loading: false,
         }));
+
+        // If user just logged in (was null, now has user), try to sync offline data
+        if (user && !previousUser) {
+          console.log('User authenticated, checking for offline data to sync...');
+          try {
+            // Small delay to ensure auth state is fully set
+            setTimeout(async () => {
+              try {
+                const hasUnsynced = await expenseService.hasUnsyncedData();
+                if (hasUnsynced) {
+                  console.log('Found unsynced data, triggering sync...');
+                  await expenseService.manualSync();
+                }
+              } catch (error) {
+                console.log('Auto-sync after login failed:', error);
+              }
+            }, 1000);
+          } catch (error) {
+            console.log('Error checking for unsynced data:', error);
+          }
+        }
       }
     });
 
@@ -81,7 +107,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       subscription.unsubscribe();
     };
   }, []);
-
   const login = async (email: string, password: string) => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
@@ -93,6 +118,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     setAuthState({ user, loading: false, error: null });
+    
+    // Trigger sync after successful login
+    if (user) {
+      setTimeout(async () => {
+        try {
+          const hasUnsynced = await expenseService.hasUnsyncedData();
+          if (hasUnsynced) {
+            console.log('Login successful, syncing offline data...');
+            await expenseService.manualSync();
+          }
+        } catch (error) {
+          console.log('Post-login sync failed:', error);
+        }
+      }, 500);
+    }
+    
     return { success: true };
   };
 

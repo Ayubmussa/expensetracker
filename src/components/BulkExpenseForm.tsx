@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { expenseService } from '../services/expenseService';
-import { localStorageUtils } from '../utils/localStorage';
-import { useAuth } from '../hooks/useAuth';
 import type { Category, ExpenseFormData } from '../types';
 import './BulkExpenseForm.css';
 
@@ -15,7 +13,7 @@ interface BulkExpenseFormProps {
 }
 
 const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onClose }) => {
-  const { user } = useAuth();  const [expenses, setExpenses] = useState<BulkExpenseItem[]>([]);
+  const [expenses, setExpenses] = useState<BulkExpenseItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: Partial<ExpenseFormData> }>({});
@@ -141,14 +139,9 @@ const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onCl
     
     if (!validateAllExpenses()) return;
 
-    setIsSubmitting(true);
-    try {
-      // Use authenticated user ID or generate offline user ID
-      const userId = user?.id || localStorageUtils.getOfflineUserId();
-      
+    setIsSubmitting(true);    try {
       // Prepare expense data
       const expenseData = expenses.map(expense => ({
-        user_id: userId,
         amount: parseFloat(expense.amount),
         description: expense.description.trim(),
         category: expense.category,

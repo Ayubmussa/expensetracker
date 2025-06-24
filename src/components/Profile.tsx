@@ -41,10 +41,6 @@ const Profile: React.FC<ProfileProps> = ({ onClose }) => {
               <span>{user.email}</span>
             </div>
             <div className="profile-field">
-              <label>User ID:</label>
-              <span className="user-id">{user.id}</span>
-            </div>
-            <div className="profile-field">
               <label>Full Name:</label>
               <span>{user.full_name || 'Not provided'}</span>
             </div>
