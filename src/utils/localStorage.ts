@@ -3,9 +3,33 @@ import type { Expense, Category } from '../types';
 const STORAGE_KEYS = {
   EXPENSES: 'expenses',
   CATEGORIES: 'categories',
+  OFFLINE_USER: 'offline_user',
 } as const;
 
+// Create a unique identifier for offline mode if it doesn't exist
+const getOfflineUserId = (): string => {
+  let offlineUserId = localStorage.getItem(STORAGE_KEYS.OFFLINE_USER);
+  if (!offlineUserId) {
+    offlineUserId = `offline_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem(STORAGE_KEYS.OFFLINE_USER, offlineUserId);
+  }
+  return offlineUserId;
+};
+
 export const localStorageUtils = {
+  // Get offline user identifier
+  getOfflineUserId,
+
+  // Clear offline user data (for fresh start)
+  clearOfflineUser: (): void => {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.OFFLINE_USER);
+      localStorage.removeItem(STORAGE_KEYS.EXPENSES);
+      localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+    } catch (error) {
+      console.error('Error clearing offline user data:', error);
+    }
+  },
   // Expense operations
   getExpenses: (): Expense[] => {
     try {
@@ -23,12 +47,20 @@ export const localStorageUtils = {
     } catch (error) {
       console.error('Error saving expenses to localStorage:', error);
     }
-  },
-
-  addExpense: (expense: Expense): void => {
+  },  addExpense: (expense: Expense): void => {
+    console.log('localStorage: Adding expense', expense);
     const expenses = localStorageUtils.getExpenses();
     expenses.push(expense);
     localStorageUtils.saveExpenses(expenses);
+    console.log('localStorage: Expense added, total count:', expenses.length);
+  },
+
+  addMultipleExpenses: (newExpenses: Expense[]): void => {
+    console.log('localStorage: Adding multiple expenses', newExpenses.length);
+    const expenses = localStorageUtils.getExpenses();
+    expenses.push(...newExpenses);
+    localStorageUtils.saveExpenses(expenses);
+    console.log('localStorage: Multiple expenses added, total count:', expenses.length);
   },
 
   updateExpense: (updatedExpense: Expense): void => {

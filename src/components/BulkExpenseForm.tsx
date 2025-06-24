@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { expenseService } from '../services/expenseService';
+import { localStorageUtils } from '../utils/localStorage';
 import { useAuth } from '../hooks/useAuth';
 import type { Category, ExpenseFormData } from '../types';
 import './ExpenseForm.css';
@@ -132,32 +133,27 @@ const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onCl
         }
       }));
     }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  };  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateAllExpenses()) return;
 
-    if (!user) {
-      console.error('User not authenticated');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
-      // Submit all expenses
-      const promises = expenses.map(expense =>
-        expenseService.addExpense({
-          user_id: user.id,
-          amount: parseFloat(expense.amount),
-          description: expense.description.trim(),
-          category: expense.category,
-          date: expense.date,
-        })
-      );
+      // Use authenticated user ID or generate offline user ID
+      const userId = user?.id || localStorageUtils.getOfflineUserId();
+      
+      // Prepare expense data
+      const expenseData = expenses.map(expense => ({
+        user_id: userId,
+        amount: parseFloat(expense.amount),
+        description: expense.description.trim(),
+        category: expense.category,
+        date: expense.date,
+      }));
 
-      await Promise.all(promises);
+      // Use bulk submission method
+      await expenseService.addMultipleExpenses(expenseData);
 
       onExpensesAdded();
       onClose();

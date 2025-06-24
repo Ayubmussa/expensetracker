@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { expenseService } from '../services/expenseService';
+import { localStorageUtils } from '../utils/localStorage';
 import { useAuth } from '../hooks/useAuth';
 import type { Category, ExpenseFormData } from '../types';
 import './ExpenseForm.css';
@@ -56,21 +57,18 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-  const handleSubmit = async (e: React.FormEvent) => {
+  };  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
 
-    if (!user) {
-      console.error('User not authenticated');
-      return;
-    }
-
     setIsSubmitting(true);
     try {
+      // Use authenticated user ID or generate offline user ID
+      const userId = user?.id || localStorageUtils.getOfflineUserId();
+      
       await expenseService.addExpense({
-        user_id: user.id,
+        user_id: userId,
         amount: parseFloat(formData.amount),
         description: formData.description.trim(),
         category: formData.category,

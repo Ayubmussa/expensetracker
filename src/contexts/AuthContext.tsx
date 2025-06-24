@@ -12,18 +12,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user: null,
     loading: true,
     error: null,
-  });  useEffect(() => {
+  });
+
+  useEffect(() => {
     let mounted = true;
 
-    // Failsafe timeout to prevent infinite loading
+    // Shorter timeout since we want to allow offline usage quickly
     const loadingTimeout = setTimeout(() => {
       if (mounted) {
-        console.warn('Auth loading timeout - setting loading to false');
+        console.log('Auth loading timeout - enabling offline mode');
         setAuthState(prev => ({ ...prev, loading: false }));
       }
-    }, 15000); // 15 second timeout    // Check for existing session
+    }, 3000); // Reduced to 3 seconds for better offline experience
+
+    // Check for existing session
     const checkUser = async () => {
       try {
+        // Only check auth if we're online
+        if (!navigator.onLine) {
+          if (mounted) {
+            clearTimeout(loadingTimeout);
+            setAuthState({
+              user: null,
+              loading: false,
+              error: null, // No error for offline mode
+            });
+          }
+          return;
+        }
+
         const { user, error } = await authService.getCurrentUser();
         if (mounted) {
           clearTimeout(loadingTimeout);
@@ -33,19 +50,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             error: error,
           });
         }
-      } catch (error) {
+      } catch {
         if (mounted) {
           clearTimeout(loadingTimeout);
+          // Don't treat auth failure as an error - allow offline usage
           setAuthState({
             user: null,
             loading: false,
-            error: (error as Error).message,
+            error: null, // Removed error to allow offline usage
           });
         }
       }
     };
 
-    checkUser();    // Listen for auth changes
+    checkUser();// Listen for auth changes
     const { data: { subscription } } = authService.onAuthStateChange((user: User | null) => {
       if (mounted) {
         clearTimeout(loadingTimeout);

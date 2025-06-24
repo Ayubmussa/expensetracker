@@ -17,9 +17,19 @@ class ExpenseService {
       this.isOnline = false;
     });
   }
-  async getExpenses(filters?: FilterOptions): Promise<Expense[]> {
+
+  private async isAuthenticated(): Promise<boolean> {
     try {
-      if (this.isOnline) {
+      const { data: { user } } = await supabase.auth.getUser();
+      return user !== null;
+    } catch (error) {
+      console.log('Authentication check failed:', error);
+      return false;
+    }
+  }async getExpenses(filters?: FilterOptions): Promise<Expense[]> {
+    try {
+      // Only try Supabase if online AND authenticated
+      if (this.isOnline && await this.isAuthenticated()) {
         // RLS policies will automatically filter by authenticated user
         const { data, error } = await supabase
           .from(TABLES.EXPENSES)
@@ -30,15 +40,16 @@ class ExpenseService {
         return this.applyFilters(data || [], filters);
       }
     } catch (error) {
-      console.error('Error fetching from Supabase, using localStorage:', error);
+      console.log('Using localStorage (offline mode or auth issue):', error);
     }
 
-    // Fallback to localStorage
+    // Fallback to localStorage for offline mode or when not authenticated
     const expenses = localStorageUtils.getExpenses();
     return this.applyFilters(expenses, filters);
   }
-
   async addExpense(expenseData: Omit<Expense, 'id' | 'created_at' | 'updated_at'>): Promise<Expense> {
+    console.log('expenseService: Adding expense', expenseData);
+    
     const expense: Expense = {
       id: uuidv4(),
       ...expenseData,
@@ -46,23 +57,59 @@ class ExpenseService {
       updated_at: new Date().toISOString(),
     };
 
+    console.log('expenseService: Created expense object', expense);
+
     try {
-      if (this.isOnline) {
+      // Only try Supabase if online AND authenticated
+      if (this.isOnline && await this.isAuthenticated()) {
         const { error } = await supabase
           .from(TABLES.EXPENSES)
           .insert([expense]);
 
         if (error) throw error;
+        console.log('expenseService: Expense saved to Supabase');
+      } else {
+        console.log('expenseService: Saving expense to localStorage (offline mode)');
       }
     } catch (error) {
-      console.error('Error adding to Supabase, saving to localStorage:', error);
+      console.log('expenseService: Error with Supabase, using localStorage:', error);
     }
 
-    // Always save to localStorage as backup
+    // Always save to localStorage as backup or primary storage
+    console.log('expenseService: Calling localStorage.addExpense');
     localStorageUtils.addExpense(expense);
+    console.log('expenseService: Expense saved successfully');
     return expense;
   }
 
+  async addMultipleExpenses(expensesData: Omit<Expense, 'id' | 'created_at' | 'updated_at'>[]): Promise<Expense[]> {
+    const expenses: Expense[] = expensesData.map(expenseData => ({
+      id: uuidv4(),
+      ...expenseData,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }));
+
+    try {
+      // Only try Supabase if online AND authenticated
+      if (this.isOnline && await this.isAuthenticated()) {
+        const { error } = await supabase
+          .from(TABLES.EXPENSES)
+          .insert(expenses);
+
+        if (error) throw error;
+        console.log('Multiple expenses saved to Supabase');
+      } else {
+        console.log('Saving multiple expenses to localStorage (offline mode)');
+      }
+    } catch (error) {
+      console.log('Error with Supabase, using localStorage:', error);
+    }
+
+    // Always save to localStorage as backup or primary storage
+    localStorageUtils.addMultipleExpenses(expenses);
+    return expenses;
+  }
   async updateExpense(expense: Expense): Promise<Expense> {
     const updatedExpense = {
       ...expense,
@@ -70,16 +117,20 @@ class ExpenseService {
     };
 
     try {
-      if (this.isOnline) {
+      // Only try Supabase if online AND authenticated
+      if (this.isOnline && await this.isAuthenticated()) {
         const { error } = await supabase
           .from(TABLES.EXPENSES)
           .update(updatedExpense)
           .eq('id', expense.id);
 
         if (error) throw error;
+        console.log('Expense updated in Supabase');
+      } else {
+        console.log('Updating expense in localStorage (offline mode)');
       }
     } catch (error) {
-      console.error('Error updating in Supabase, updating localStorage:', error);
+      console.log('Error updating in Supabase, using localStorage:', error);
     }
 
     localStorageUtils.updateExpense(updatedExpense);
@@ -88,23 +139,27 @@ class ExpenseService {
 
   async deleteExpense(expenseId: string): Promise<void> {
     try {
-      if (this.isOnline) {
+      // Only try Supabase if online AND authenticated
+      if (this.isOnline && await this.isAuthenticated()) {
         const { error } = await supabase
           .from(TABLES.EXPENSES)
           .delete()
           .eq('id', expenseId);
 
         if (error) throw error;
+        console.log('Expense deleted from Supabase');
+      } else {
+        console.log('Deleting expense from localStorage (offline mode)');
       }
     } catch (error) {
-      console.error('Error deleting from Supabase, deleting from localStorage:', error);
+      console.log('Error deleting from Supabase, using localStorage:', error);
     }
 
     localStorageUtils.deleteExpense(expenseId);
   }
-
   async getCategories(): Promise<Category[]> {
     try {
+      // Categories are usually public, but we'll check if authenticated for consistency
       if (this.isOnline) {
         const { data, error } = await supabase
           .from(TABLES.CATEGORIES)
@@ -112,12 +167,16 @@ class ExpenseService {
           .order('name');
 
         if (error) throw error;
-        if (data && data.length > 0) return data;
+        if (data && data.length > 0) {
+          console.log('Categories loaded from Supabase');
+          return data;
+        }
       }
     } catch (error) {
-      console.error('Error fetching categories from Supabase, using localStorage:', error);
+      console.log('Error fetching categories from Supabase, using localStorage:', error);
     }
 
+    console.log('Using localStorage categories (offline mode)');
     return localStorageUtils.getCategories();
   }
 

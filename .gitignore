@@ -10,3 +10,8 @@ tsconfig.app.json
 README.md
 PASSWORD_RESET_FLOW.md
 APP_FLOWCHART.md
+POSTMAN_API_TESTING.md
+ExpenseTracker-Environment.postman_environment.json
+ExpenseTracker-Postman-Collection.json
+ExpenseTracker_Report.tex
+ExpenseTracker API Collection.json

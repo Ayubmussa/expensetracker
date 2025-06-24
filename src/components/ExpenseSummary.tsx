@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { expenseService } from '../services/expenseService';
-import { useAuth } from '../hooks/useAuth';
 import type { ExpenseSummary as ExpenseSummaryType, Category } from '../types';
 import './ExpenseSummary.css';
 
@@ -9,17 +8,12 @@ interface ExpenseSummaryProps {
 }
 
 const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ refreshTrigger }) => {
-  const { user } = useAuth();
   const [summary, setSummary] = useState<ExpenseSummaryType | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState<'all' | 'month' | 'week'>('all');
-  const loadSummary = useCallback(async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
 
+  const loadSummary = useCallback(async () => {
     setIsLoading(true);
     try {
       const filters = getFiltersForPeriod(selectedPeriod);
@@ -29,12 +23,13 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ refreshTrigger }) => {
       ]);
       setSummary(summaryData);
       setCategories(categoryData);
+      console.log('ExpenseSummary: Loaded summary:', summaryData);
     } catch (error) {
       console.error('Error loading summary:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [user, selectedPeriod]);
+  }, [selectedPeriod]); // Removed user dependency
 
   useEffect(() => {
     loadSummary();

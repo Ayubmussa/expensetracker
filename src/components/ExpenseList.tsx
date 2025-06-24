@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { expenseService } from '../services/expenseService';
-import { useAuth } from '../hooks/useAuth';
 import type { Expense, Category, FilterOptions } from '../types';
 import './ExpenseList.css';
 
@@ -9,20 +8,13 @@ interface ExpenseListProps {
 }
 
 const ExpenseList: React.FC<ExpenseListProps> = ({ refreshTrigger }) => {
-  const { user } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState<FilterOptions>({
     sortBy: 'date',
     sortOrder: 'desc',
-  });
-  const loadData = useCallback(async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-
+  });  const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [expenseData, categoryData] = await Promise.all([
@@ -31,12 +23,13 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ refreshTrigger }) => {
       ]);
       setExpenses(expenseData);
       setCategories(categoryData);
+      console.log('ExpenseList: Loaded expenses:', expenseData.length);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [user, filters]);
+  }, [filters]); // Removed user dependency since we want to load in offline mode too
 
   useEffect(() => {
     loadData();
