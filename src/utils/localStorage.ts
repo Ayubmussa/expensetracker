@@ -19,13 +19,12 @@ const getOfflineUserId = (): string => {
 export const localStorageUtils = {
   // Get offline user identifier
   getOfflineUserId,
-
   // Clear offline user data (for fresh start)
   clearOfflineUser: (): void => {
     try {
       localStorage.removeItem(STORAGE_KEYS.OFFLINE_USER);
-      localStorage.removeItem(STORAGE_KEYS.EXPENSES);
-      localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+      // Note: This preserves expenses and categories data
+      console.log('Offline user cleared, data preserved');
     } catch (error) {
       console.error('Error clearing offline user data:', error);
     }
@@ -95,15 +94,37 @@ export const localStorageUtils = {
     } catch (error) {
       console.error('Error saving categories to localStorage:', error);
     }
+  },  addCategory: (category: Category): void => {
+    try {
+      const categories = localStorageUtils.getCategories();
+      categories.push(category);
+      localStorageUtils.saveCategories(categories);
+      console.log('localStorage: Added category', category);
+    } catch (error) {
+      console.error('Error adding category to localStorage:', error);
+    }
   },
 
-  // Clear all data
-  clearAll: (): void => {
+  // Clear only temporary data (preserves user expenses and categories)
+  clearTempData: (): void => {
     try {
-      localStorage.removeItem(STORAGE_KEYS.EXPENSES);
-      localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+      // Only clear non-user data if needed in the future
+      // This preserves expenses and categories
+      console.log('Clearing temporary data (user data preserved)');
     } catch (error) {
-      console.error('Error clearing localStorage:', error);
+      console.error('Error clearing temporary data:', error);
+    }
+  },
+
+  // Reset to fresh offline user (generates new offline user ID but keeps data structure)
+  resetOfflineUser: (): void => {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.OFFLINE_USER);
+      // Generate new offline user ID
+      getOfflineUserId();
+      console.log('Offline user reset, data preserved');
+    } catch (error) {
+      console.error('Error resetting offline user:', error);
     }
   },
 };

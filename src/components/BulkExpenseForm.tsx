@@ -3,7 +3,7 @@ import { expenseService } from '../services/expenseService';
 import { localStorageUtils } from '../utils/localStorage';
 import { useAuth } from '../hooks/useAuth';
 import type { Category, ExpenseFormData } from '../types';
-import './ExpenseForm.css';
+import './BulkExpenseForm.css';
 
 interface BulkExpenseItem extends ExpenseFormData {
   id: string;
@@ -15,11 +15,14 @@ interface BulkExpenseFormProps {
 }
 
 const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onClose }) => {
-  const { user } = useAuth();
-  const [expenses, setExpenses] = useState<BulkExpenseItem[]>([]);
+  const { user } = useAuth();  const [expenses, setExpenses] = useState<BulkExpenseItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: Partial<ExpenseFormData> }>({});
+  const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('💰');
+  const [selectedExpenseIdForCategory, setSelectedExpenseIdForCategory] = useState<string | null>(null);
 
   const createEmptyExpense = (): BulkExpenseItem => ({
     id: crypto.randomUUID(),
@@ -171,24 +174,116 @@ const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onCl
     }, 0);
   };
 
+  const handleCategoryChange = (expenseId: string, value: string) => {
+    if (value === 'create-new') {
+      setSelectedExpenseIdForCategory(expenseId);
+      setShowNewCategoryModal(true);
+    } else {
+      updateExpense(expenseId, 'category', value);
+    }
+  };
+
+  const handleCreateNewCategory = async () => {
+    if (!newCategoryName.trim()) return;
+
+    try {
+      const newCategory = await expenseService.createCategory({
+        name: newCategoryName.trim(),
+        color: '#3b82f6',
+        icon: newCategoryIcon,
+      });
+
+      setCategories(prev => [...prev, newCategory]);
+      
+      // Update the expense that triggered the category creation
+      if (selectedExpenseIdForCategory) {
+        updateExpense(selectedExpenseIdForCategory, 'category', newCategory.name);
+      }
+
+      // Reset modal state
+      setShowNewCategoryModal(false);
+      setNewCategoryName('');
+      setNewCategoryIcon('💰');
+      setSelectedExpenseIdForCategory(null);
+    } catch (error) {
+      console.error('Error creating category:', error);
+    }
+  };
+
+  const handleCancelNewCategory = () => {
+    setShowNewCategoryModal(false);
+    setNewCategoryName('');
+    setNewCategoryIcon('💰');
+    setSelectedExpenseIdForCategory(null);
+  };
+
   return (
     <div className="modal-overlay">
       <div className="modal-content bulk-expense-modal">
         <div className="modal-header">
-          <h2>Add Multiple Expenses</h2>
+          <h2>📝 Add Multiple Expenses</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
 
         <form onSubmit={handleSubmit} className="bulk-expense-form">
+          {/* Quick Actions Bar */}
+          <div className="bulk-actions-bar">
+            <div className="quick-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  const today = new Date().toISOString().split('T')[0];
+                  setExpenses(prev => prev.map(expense => ({ ...expense, date: today })));
+                }}
+                className="quick-action-btn"
+                title="Set all dates to today"
+              >
+                📅 Today
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => {
+                  const lastCategory = expenses[expenses.length - 1]?.category || categories[0]?.name;
+                  setExpenses(prev => prev.map(expense => ({ ...expense, category: lastCategory })));
+                }}
+                className="quick-action-btn"
+                title="Apply last selected category to all"
+              >
+                🏷️ Same Category
+              </button>
+            </div>
+            
+            <button
+              type="button"
+              onClick={addExpenseRow}
+              className="add-row-btn-mini"
+            >
+              + Add Row
+            </button>
+          </div>
+
+          {/* Expense List Header */}
+          <div className="expense-list-header">
+            <div className="header-row">
+              <span className="header-cell header-number">#</span>
+              <span className="header-cell header-amount">Amount</span>
+              <span className="header-cell header-description">Description</span>
+              <span className="header-cell header-category">Category</span>
+              <span className="header-cell header-date">Date</span>
+              <span className="header-cell header-actions">Actions</span>
+            </div>
+          </div>
+
+          {/* Expense Rows */}
           <div className="expense-rows">
             {expenses.map((expense, index) => (
               <div key={expense.id} className="expense-row">
                 <div className="row-number">{index + 1}</div>
-                
-                <div className="form-group">
+                  <div className="form-group" data-label="Amount">
                   <input
                     type="number"
-                    placeholder="Amount"
+                    placeholder="0.00"
                     value={expense.amount}
                     onChange={(e) => updateExpense(expense.id, 'amount', e.target.value)}
                     step="0.01"
@@ -200,10 +295,10 @@ const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onCl
                   )}
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" data-label="Description">
                   <input
                     type="text"
-                    placeholder="Description"
+                    placeholder="Expense description"
                     value={expense.description}
                     onChange={(e) => updateExpense(expense.id, 'description', e.target.value)}
                     className={errors[expense.id]?.description ? 'error' : ''}
@@ -213,10 +308,10 @@ const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onCl
                   )}
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" data-label="Category">
                   <select
                     value={expense.category}
-                    onChange={(e) => updateExpense(expense.id, 'category', e.target.value)}
+                    onChange={(e) => handleCategoryChange(expense.id, e.target.value)}
                     className={errors[expense.id]?.category ? 'error' : ''}
                   >
                     {categories.map(category => (
@@ -224,13 +319,12 @@ const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onCl
                         {category.icon} {category.name}
                       </option>
                     ))}
+                    <option value="create-new">➕ Create New Category</option>
                   </select>
                   {errors[expense.id]?.category && (
                     <span className="error-text">{errors[expense.id].category}</span>
                   )}
-                </div>
-
-                <div className="form-group">
+                </div>                <div className="form-group" data-label="Date">
                   <input
                     type="date"
                     value={expense.date}
@@ -240,12 +334,14 @@ const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onCl
                   {errors[expense.id]?.date && (
                     <span className="error-text">{errors[expense.id].date}</span>
                   )}
-                </div>                <div className="row-actions">
+                </div>
+
+                <div className="row-actions">
                   <button
                     type="button"
                     onClick={() => duplicateExpenseRow(expense.id)}
                     className="duplicate-row-btn"
-                    title="Duplicate row"
+                    title="Duplicate this expense"
                   >
                     📋
                   </button>
@@ -254,57 +350,42 @@ const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onCl
                     onClick={() => removeExpenseRow(expense.id)}
                     className="remove-row-btn"
                     disabled={expenses.length === 1}
-                    title="Remove row"
+                    title="Remove this expense"
                   >
                     🗑️
                   </button>
                 </div>
               </div>
             ))}
-          </div>          <div className="bulk-form-actions">
-            <div className="quick-actions">
-              <button
-                type="button"
-                onClick={() => {
-                  const today = new Date().toISOString().split('T')[0];
-                  setExpenses(prev => prev.map(expense => ({ ...expense, date: today })));
-                }}
-                className="quick-action-btn"
-              >
-                📅 Set All to Today
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => {
-                  const lastCategory = expenses[expenses.length - 1]?.category || categories[0]?.name;
-                  setExpenses(prev => prev.map(expense => ({ ...expense, category: lastCategory })));
-                }}
-                className="quick-action-btn"
-              >
-                🏷️ Use Same Category
-              </button>
-            </div>
-            
+          </div>
+
+          {/* Add More Row Button */}
+          <div className="add-more-section">
             <button
               type="button"
               onClick={addExpenseRow}
               className="add-row-btn"
             >
-              + Add Another Expense
+              <span className="add-icon">+</span>
+              Add Another Expense
             </button>
-            
             <div className="bulk-form-shortcuts">
-              <small>💡 Tips: Use Tab to navigate between fields • Ctrl+D to duplicate row • Ctrl+Enter to submit</small>
+              <small>💡 Pro tip: Use Tab to navigate • Click duplicate (📋) to copy a row</small>
             </div>
           </div>
 
+          {/* Summary Section */}
           <div className="bulk-summary">
-            <div className="total-amount">
-              <strong>Total Amount: ${getTotalAmount().toFixed(2)}</strong>
+            <div className="summary-left">
+              <div className="expense-count">
+                <strong>{expenses.length}</strong> expense{expenses.length !== 1 ? 's' : ''} ready to add
+              </div>
             </div>
-            <div className="expense-count">
-              {expenses.length} expense{expenses.length !== 1 ? 's' : ''}
+            <div className="summary-right">
+              <div className="total-amount">
+                <span className="total-label">Total:</span>
+                <span className="total-value">${getTotalAmount().toFixed(2)}</span>
+              </div>
             </div>
           </div>
 
@@ -322,11 +403,64 @@ const BulkExpenseForm: React.FC<BulkExpenseFormProps> = ({ onExpensesAdded, onCl
               className="submit-btn"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Adding...' : `Add ${expenses.length} Expense${expenses.length !== 1 ? 's' : ''}`}
+              {isSubmitting ? (
+                <><span className="loading-spinner"></span> Adding...</>
+              ) : (
+                <>💾 Add {expenses.length} Expense{expenses.length !== 1 ? 's' : ''}</>
+              )}
             </button>
-          </div>
-        </form>
+          </div>        </form>
       </div>
+
+      {/* New Category Modal - Separate overlay */}
+      {showNewCategoryModal && (
+        <div className="new-category-modal-overlay">
+          <div className="new-category-modal">
+            <div className="modal-header">
+              <h3>➕ Create New Category</h3>
+              <button className="close-button" onClick={handleCancelNewCategory}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Category Name</label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Enter category name"
+                  autoFocus
+                />
+              </div>
+              <div className="form-group">
+                <label>Category Icon</label>
+                <input
+                  type="text"
+                  value={newCategoryIcon}
+                  onChange={(e) => setNewCategoryIcon(e.target.value)}
+                  placeholder="Enter category icon"
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                onClick={handleCancelNewCategory}
+                className="cancel-btn"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateNewCategory}
+                className="submit-btn"
+                disabled={!newCategoryName.trim()}
+              >
+                Create Category
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

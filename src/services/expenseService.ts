@@ -205,6 +205,35 @@ class ExpenseService {
     };
   }
 
+  async createCategory(categoryData: Omit<Category, 'id'>): Promise<Category> {
+    const newCategory: Category = {
+      id: uuidv4(),
+      ...categoryData
+    };
+
+    try {
+      // Only try Supabase if online AND authenticated
+      if (this.isOnline && await this.isAuthenticated()) {
+        const { data, error } = await supabase
+          .from(TABLES.CATEGORIES)
+          .insert([newCategory])
+          .select()
+          .single();
+
+        if (error) throw error;
+        console.log('Category created in Supabase:', data);
+        return data;
+      }
+    } catch (error) {
+      console.log('Error creating category in Supabase, using localStorage:', error);
+    }
+
+    // Fallback to localStorage for offline mode or when not authenticated
+    console.log('Creating category in localStorage (offline mode)');
+    localStorageUtils.addCategory(newCategory);
+    return newCategory;
+  }
+
   private applyFilters(expenses: Expense[], filters?: FilterOptions): Expense[] {
     if (!filters) return expenses;
 

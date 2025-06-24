@@ -5,9 +5,10 @@ import './ExpenseSummary.css';
 
 interface ExpenseSummaryProps {
   refreshTrigger?: number;
+  onCategoryClick?: (category: string) => void;
 }
 
-const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ refreshTrigger }) => {
+const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ refreshTrigger, onCategoryClick }) => {
   const [summary, setSummary] = useState<ExpenseSummaryType | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -163,7 +164,12 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ refreshTrigger }) => {
             {summary.categoryBreakdown.map(categoryData => {
               const categoryInfo = getCategoryInfo(categoryData.category);
               return (
-                <div key={categoryData.category} className="category-item">
+                <div 
+                  key={categoryData.category} 
+                  className="category-item"
+                  onClick={() => onCategoryClick?.(categoryData.category)}
+                  style={{ cursor: onCategoryClick ? 'pointer' : 'default' }}
+                >
                   <div className="category-header">
                     <div className="category-info">
                       <div

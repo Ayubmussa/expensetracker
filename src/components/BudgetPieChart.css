@@ -1,0 +1,154 @@
+/* Budget Pie Chart Styles */
+.budget-pie-chart {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.budget-pie-chart h2 {
+  color: #ffffff;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.chart-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+}
+
+.chart-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  color: #ef4444;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.no-data-message {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  gap: 1rem;
+}
+
+.no-data-message h3 {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+.no-data-message p {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1rem;
+  margin: 0;
+}
+
+.chart-legend {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.legend-amount {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 400;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .budget-pie-chart {
+    padding: 1.5rem;
+    margin: 1rem 0;
+  }
+
+  .chart-container {
+    max-width: 350px;
+    padding: 0.5rem;
+  }
+
+  .budget-pie-chart h2 {
+    font-size: 1.3rem;
+  }
+
+  .chart-legend {
+    gap: 0.75rem;
+  }
+
+  .legend-item {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .budget-pie-chart {
+    padding: 1rem;
+  }
+
+  .chart-container {
+    max-width: 300px;
+  }
+
+  .budget-pie-chart h2 {
+    font-size: 1.2rem;
+  }
+
+  .chart-legend {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .legend-item {
+    width: 100%;
+    max-width: 250px;
+    justify-content: center;
+  }
+}

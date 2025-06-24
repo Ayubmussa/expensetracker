@@ -16,9 +16,11 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
     description: '',
     category: '',
     date: new Date().toISOString().split('T')[0],
-  });
-  const [categories, setCategories] = useState<Category[]>([]);
+  });  const [categories, setCategories] = useState<Category[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);  const [errors, setErrors] = useState<Partial<ExpenseFormData>>({});
+  const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryIcon, setNewCategoryIcon] = useState('💰');
 
   const loadCategories = useCallback(async () => {
     try {
@@ -101,6 +103,47 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
     }
   };
 
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (value === 'create-new') {
+      setShowNewCategoryModal(true);
+    } else {
+      setFormData(prev => ({ ...prev, category: value }));
+      // Clear error when user selects a category
+      if (errors.category) {
+        setErrors(prev => ({ ...prev, category: undefined }));
+      }
+    }
+  };
+
+  const handleCreateNewCategory = async () => {
+    if (!newCategoryName.trim()) return;
+
+    try {
+      const newCategory = await expenseService.createCategory({
+        name: newCategoryName.trim(),
+        color: '#3b82f6',
+        icon: newCategoryIcon,
+      });
+
+      setCategories(prev => [...prev, newCategory]);
+      setFormData(prev => ({ ...prev, category: newCategory.name }));
+      
+      // Reset modal state
+      setShowNewCategoryModal(false);
+      setNewCategoryName('');
+      setNewCategoryIcon('💰');
+    } catch (error) {
+      console.error('Error creating category:', error);
+    }
+  };
+
+  const handleCancelNewCategory = () => {
+    setShowNewCategoryModal(false);
+    setNewCategoryName('');
+    setNewCategoryIcon('💰');
+  };
+
   const selectedCategory = categories.find(cat => cat.name === formData.category);
   return (
     <div className="expense-form-container">
@@ -142,7 +185,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
               id="category"
               name="category"
               value={formData.category}
-              onChange={handleInputChange}
+              onChange={handleCategoryChange}
               className={errors.category ? 'error' : ''}
             >
               <option value="">Select a category</option>
@@ -151,6 +194,7 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
                   {category.icon} {category.name}
                 </option>
               ))}
+              <option value="create-new">+ Create new category</option>
             </select>
             {selectedCategory && (
               <div className="category-preview" style={{ backgroundColor: selectedCategory.color }}>
@@ -182,6 +226,42 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
         >
           {isSubmitting ? 'Adding...' : 'Add Expense'}
         </button>
+
+        {showNewCategoryModal && (
+          <div className="new-category-modal">
+            <h3>Create New Category</h3>
+            <div className="form-group">
+              <label htmlFor="newCategoryName">Category Name</label>
+              <input
+                type="text"
+                id="newCategoryName"
+                value={newCategoryName}
+                onChange={e => setNewCategoryName(e.target.value)}
+                placeholder="Enter category name"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="newCategoryIcon">Category Icon</label>
+              <input
+                type="text"
+                id="newCategoryIcon"
+                value={newCategoryIcon}
+                onChange={e => setNewCategoryIcon(e.target.value)}
+                placeholder="Enter category icon"
+              />
+            </div>
+
+            <div className="modal-actions">
+              <button onClick={handleCreateNewCategory} className="submit-button">
+                Create Category
+              </button>
+              <button onClick={handleCancelNewCategory} className="cancel-button">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </form>
     </div>
   );

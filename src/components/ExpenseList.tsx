@@ -5,9 +5,10 @@ import './ExpenseList.css';
 
 interface ExpenseListProps {
   refreshTrigger?: number;
+  highlightCategory?: string | null;
 }
 
-const ExpenseList: React.FC<ExpenseListProps> = ({ refreshTrigger }) => {
+const ExpenseList: React.FC<ExpenseListProps> = ({ refreshTrigger, highlightCategory }) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -144,7 +145,10 @@ const ExpenseList: React.FC<ExpenseListProps> = ({ refreshTrigger }) => {
           {expenses.map(expense => {
             const categoryInfo = getCategoryInfo(expense.category);
             return (
-              <div key={expense.id} className="expense-item">
+              <div 
+                key={expense.id} 
+                className={`expense-item ${highlightCategory === expense.category ? 'highlighted' : ''}`}
+              >
                 <div className="expense-category" style={{ backgroundColor: categoryInfo.color }}>
                   {categoryInfo.icon}
                 </div>
