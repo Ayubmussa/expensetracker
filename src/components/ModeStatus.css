@@ -13,15 +13,15 @@
 }
 
 .status-online {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: #10b981;
-  color: #10b981;
+  background: var(--bg-secondary);
+  border-color: var(--success-color);
+  color: var(--success-color);
 }
 
 .status-offline {
-  background: rgba(245, 158, 11, 0.1);
-  border-color: #f59e0b;
-  color: #f59e0b;
+  background: var(--bg-secondary);
+  border-color: var(--warning-color);
+  color: var(--warning-color);
 }
 
 .status-icon {

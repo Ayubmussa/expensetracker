@@ -53,6 +53,9 @@ class SyncService {
         await this.cleanupSyncedData(result);
         // Mark as synced
         this.markDataAsSynced();
+        console.log('Post-sync cleanup completed');
+      } else {
+        console.log('Sync completed with some errors:', result);
       }
 
     } catch (error) {

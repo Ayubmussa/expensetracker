@@ -14,16 +14,17 @@
 }
 
 .modal-content {
-  background: #111111;
-  border: 1px solid #333333;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 25px -5px var(--shadow-color), 0 10px 10px -5px var(--shadow-color);
   max-width: 95vw;
   max-height: 95vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   width: 100%;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .bulk-expense-modal {
@@ -37,15 +38,15 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  border-bottom: 1px solid #333333;
-  background: linear-gradient(135deg, #1a1a1a, #111111);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
   border-radius: 12px 12px 0 0;
   flex-shrink: 0;
 }
 
 .modal-header h2 {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 600;
   display: flex;
@@ -57,7 +58,7 @@
   background: none;
   border: none;
   font-size: 1.5rem;
-  color: #cccccc;
+  color: var(--text-secondary);
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 6px;
@@ -65,8 +66,8 @@
 }
 
 .close-button:hover {
-  background: #333333;
-  color: #ffffff;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 /* Form Container */
@@ -84,8 +85,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #1a1a1a;
-  border: 1px solid #333333;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 1rem;
   flex-wrap: wrap;
@@ -99,9 +100,9 @@
 }
 
 .quick-action-btn {
-  background: #333333;
-  border: 1px solid #444444;
-  color: #ffffff;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   cursor: pointer;
@@ -114,14 +115,15 @@
 }
 
 .quick-action-btn:hover {
-  background: #444444;
-  border-color: #555555;
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
   transform: translateY(-1px);
 }
 
 .add-row-btn-mini {
-  background: #10b981;
-  border: 1px solid #059669;
+  background: var(--success-color);
+  border: 1px solid var(--success-color);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 6px;
@@ -146,14 +148,14 @@
   grid-template-columns: 30px 80px 2fr 1.5fr 100px 80px;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: #1a1a1a;
+  background: var(--bg-secondary);
   border-radius: 6px;
-  border: 1px solid #333333;
+  border: 1px solid var(--border-color);
   align-items: center;
 }
 
 .header-cell {
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -179,17 +181,17 @@
   gap: 0.75rem;
   align-items: start;
   padding: 1rem;
-  border: 1px solid #333333;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #222222;
+  background: var(--bg-secondary);
   transition: all 0.2s ease;
 }
 
 .expense-row:hover {
-  border-color: #444444;
-  background: #2a2a2a;
+  border-color: var(--accent-color);
+  background: var(--bg-tertiary);
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--shadow-color);
 }
 
 .row-number {
@@ -198,7 +200,7 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  background: #2563eb;
+  background: var(--accent-color);
   color: white;
   border-radius: 50%;
   font-size: 0.7rem;
@@ -217,11 +219,11 @@
 .expense-row .form-group input,
 .expense-row .form-group select {
   padding: 0.5rem;
-  border: 1px solid #444444;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 0.875rem;
-  background-color: #1a1a1a;
-  color: #ffffff;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   width: 100%;
 }
@@ -229,7 +231,7 @@
 .expense-row .form-group input:focus,
 .expense-row .form-group select:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--accent-color);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 
@@ -329,6 +331,7 @@
   border: 1px solid #3b82f6;
   border-radius: 12px;
   padding: 1.25rem;
+  
   margin-bottom: 1rem;
   display: flex;
   justify-content: space-between;

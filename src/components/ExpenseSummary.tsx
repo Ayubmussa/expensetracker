@@ -42,13 +42,15 @@ const ExpenseSummary: React.FC<ExpenseSummaryProps> = ({ refreshTrigger, onCateg
     switch (period) {
       case 'week': {
         const weekAgo = new Date(now);
-        weekAgo.setDate(now.getDate() - 7);
+        weekAgo.setDate(now.getDate() - 6); // Last 7 days including today
+        weekAgo.setHours(0, 0, 0, 0);
         dateFrom = weekAgo.toISOString().split('T')[0];
         break;
       }
       case 'month': {
         const monthAgo = new Date(now);
         monthAgo.setMonth(now.getMonth() - 1);
+        monthAgo.setHours(0, 0, 0, 0);
         dateFrom = monthAgo.toISOString().split('T')[0];
         break;
       }

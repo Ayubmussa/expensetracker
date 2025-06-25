@@ -1,9 +1,10 @@
 .expense-list-container {
-  background: #111111;
-  border: 1px solid #333333;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -1px var(--shadow-color);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .expense-list-header {
@@ -15,18 +16,19 @@
 
 .expense-list-header h2 {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 600;
 }
 
 .expense-count {
-  background: #333333;
-  color: #cccccc;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.875rem;
   font-weight: 500;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .filters {
@@ -35,7 +37,7 @@
   gap: 1rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid #333333;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .filter-group {
@@ -46,29 +48,30 @@
 
 .filter-group label {
   font-weight: 500;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 0.875rem;
 }
 
 .filter-group select {
   padding: 0.5rem;
-  border: 1px solid #444444;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
   font-size: 0.875rem;
-  background: #222222;
-  color: #ffffff;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.3s ease;
 }
 
 .filter-group select:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--accent-color);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .loading {
   text-align: center;
   padding: 3rem;
-  color: #cccccc;
+  color: var(--text-secondary);
   font-size: 1.125rem;
 }
 
@@ -83,13 +86,13 @@
 }
 
 .no-expenses h3 {
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   font-size: 1.25rem;
 }
 
 .no-expenses p {
-  color: #cccccc;
+  color: var(--text-secondary);
   margin: 0;
 }
 
@@ -103,28 +106,46 @@
   display: flex;
   align-items: center;
   padding: 1rem;
-  border: 1px solid #333333;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   transition: all 0.15s ease-in-out;
-  background: #222222;
+  background: var(--bg-secondary);
 }
 
 .expense-item:hover {
-  border-color: #444444;
-  background: #2a2a2a;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  border-color: var(--border-color);
+  background: var(--bg-tertiary);
+  box-shadow: 0 2px 4px var(--shadow-color);
 }
 
 .expense-item.highlighted {
-  border-color: #3b82f6;
-  background: #1e3a8a;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3), 0 4px 8px rgba(0, 0, 0, 0.4);
+  border-color: var(--accent-color);
+  background: var(--accent-color);
+  color: white;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3), 0 4px 8px var(--shadow-color);
   animation: highlightPulse 2s ease-in-out;
 }
 
 .expense-item.highlighted:hover {
-  border-color: #60a5fa;
-  background: #1e40af;
+  border-color: var(--accent-hover);
+  background: var(--accent-hover);
+}
+
+/* Theme-specific overrides for better contrast */
+.expense-item.highlighted .expense-description,
+.expense-item.highlighted .expense-meta,
+.expense-item.highlighted .expense-category-name {
+  color: white !important;
+}
+
+[data-theme="light"] .expense-item.highlighted {
+  background: var(--accent-color);
+  color: white;
+}
+
+[data-theme="dark"] .expense-item.highlighted {
+  background: var(--accent-color);
+  color: white;
 }
 
 @keyframes highlightPulse {
@@ -160,7 +181,7 @@
 
 .expense-description {
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
   margin-bottom: 0.25rem;
   word-break: break-word;
 }
@@ -169,7 +190,7 @@
   display: flex;
   gap: 1rem;
   font-size: 0.875rem;
-  color: #cccccc;
+  color: var(--text-secondary);
 }
 
 .expense-category-name {
@@ -179,7 +200,7 @@
 .expense-amount {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #10b981;
+  color: var(--success-color);
   margin-right: 1rem;
   flex-shrink: 0;
 }
@@ -193,15 +214,16 @@
   font-size: 1.125rem;
   transition: background-color 0.15s ease-in-out;
   flex-shrink: 0;
-  color: #ffffff;
+  color: var(--text-secondary);
 }
 
 .delete-button:hover {
-  background-color: #991b1b;
+  background-color: var(--error-color);
+  color: white;
 }
 
 .delete-button:active {
-  background-color: #7f1d1d;
+  background-color: #b91c1c;
 }
 
 /* Responsive design */

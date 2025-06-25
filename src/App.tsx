@@ -1,31 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useRecoveryMode } from './hooks/useRecoveryMode';
+import { useTheme } from './hooks/useTheme';
 import { expenseService } from './services/expenseService';
 import ExpenseForm from './components/ExpenseForm';
 import BulkExpenseForm from './components/BulkExpenseForm';
 import ExpenseList from './components/ExpenseList';
 import ExpenseSummary from './components/ExpenseSummary';
 import ExpenseChart from './components/ExpenseChart';
-import Login from './components/Login';
-import Register from './components/Register';
-import ResetPassword from './components/ResetPassword';
+import UnifiedAuth from './components/UnifiedAuth';
 import UpdatePassword from './components/UpdatePassword';
 import Profile from './components/Profile';
 import Budget from './components/Budget';
 import BudgetPieChart from './components/BudgetPieChart';
 import ModeStatus from './components/ModeStatus';
 import SyncStatus from './components/SyncStatus';
-// import SupabaseTest from './components/SupabaseTest';
 import './App.css';
-
-type AuthView = 'login' | 'register' | 'reset' | 'update-password';
 
 function App() {
   const { user, loading, logout } = useAuth();
   const { isRecoveryMode, clearRecoveryMode } = useRecoveryMode();
+  const { theme, toggleTheme } = useTheme();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [authView, setAuthView] = useState<AuthView>('login');
   const [showBulkExpenseForm, setShowBulkExpenseForm] = useState(false);
   const [useOfflineMode, setUseOfflineMode] = useState(false);
   const [showSettingsDropdown, setShowSettingsDropdown] = useState(false);
@@ -39,6 +35,28 @@ function App() {
   useEffect(() => {
     expenseService.setOfflineMode(useOfflineMode);
   }, [useOfflineMode]);
+
+  // Listen for sync completion to refresh UI
+  useEffect(() => {
+    const handleDataSync = (event: CustomEvent) => {
+      console.log('App: Received dataSync event, refreshing UI...', event.detail);
+      setRefreshTrigger(prev => prev + 1);
+    };
+
+    const handleDataSyncError = (event: CustomEvent) => {
+      console.log('App: Received dataSyncError event:', event.detail);
+      // Optionally refresh UI even on error in case some data was synced
+      setRefreshTrigger(prev => prev + 1);
+    };
+
+    window.addEventListener('dataSync', handleDataSync as EventListener);
+    window.addEventListener('dataSyncError', handleDataSyncError as EventListener);
+
+    return () => {
+      window.removeEventListener('dataSync', handleDataSync as EventListener);
+      window.removeEventListener('dataSyncError', handleDataSyncError as EventListener);
+    };
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -68,7 +86,6 @@ function App() {
 
   const handleLogout = async () => {
     await logout();
-    setAuthView('login');
   };
 
   const handleCategoryClick = (category: string) => {
@@ -100,8 +117,8 @@ function App() {
   console.log('App render - states:', { 
     user: !!user, 
     isRecoveryMode, 
-    authView, 
-    loading 
+    loading,
+    useOfflineMode
   });
 
   // Show authentication forms if user is not logged in (but NOT for recovery mode)
@@ -109,6 +126,15 @@ function App() {
     console.log('App - showing auth forms', { userExists: !!user, isRecoveryMode, useOfflineMode });
     return (
       <div className="app">
+        {/* Global Theme Toggle - Always visible */}
+        <button 
+          className="global-theme-toggle"
+          onClick={toggleTheme}
+          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+
         <header className="app-header">
           <h1>💰 ExpenseTracker</h1>
           <p>Track your daily expenses with ease</p>
@@ -117,43 +143,20 @@ function App() {
         <main className="app-main">
           <div className="auth-container">
             <div className="auth-mode-selector">
-              <h3>Choose your mode:</h3>
-              <div className="mode-buttons">
-                <div className="mode-option">
-                  <h4>🌐 Online Mode</h4>
-                  <p>Sign in to sync your data across devices</p>
-                  <div className="auth-forms">
-                    {authView === 'login' && (
-                      <Login
-                        onSwitchToRegister={() => setAuthView('register')}
-                        onSwitchToReset={() => setAuthView('reset')}
-                      />
-                    )}
-                    {authView === 'register' && (
-                      <Register
-                        onSwitchToLogin={() => setAuthView('login')}
-                      />
-                    )}
-                    {authView === 'reset' && (
-                      <ResetPassword
-                        onSwitchToLogin={() => setAuthView('login')}
-                      />
-                    )}
-                  </div>
-                </div>
+              <h3>Track Your Expenses</h3>
+              <div className="auth-layout">
+                <UnifiedAuth onSuccess={() => setUseOfflineMode(false)} />
                 
-                <div className="mode-divider">
-                  <span>OR</span>
-                </div>
-                
-                <div className="mode-option">
-                  <h4>📱 Offline Mode</h4>
-                  <p>Use the app without signing in (data stored locally)</p>
+                <div className="offline-option">
                   <button 
                     className="offline-mode-btn"
                     onClick={() => setUseOfflineMode(true)}
                   >
-                    Continue Offline
+                    <span>📱</span>
+                    <div>
+                      <h4>Use Offline</h4>
+                      <p>Track expenses without an account</p>
+                    </div>
                   </button>
                 </div>
               </div>
@@ -162,7 +165,7 @@ function App() {
         </main>
         
         <footer className="app-footer">
-          <p>Built with React + TypeScript + Supabase</p>
+          <p>React + TypeScript + Supabase</p>
         </footer>
       </div>
     );
@@ -172,6 +175,15 @@ function App() {
   console.log('App - showing main expense tracker', { userExists: !!user, isRecoveryMode, useOfflineMode });
   return (
     <div className="app">
+      {/* Global Theme Toggle - Always visible */}
+      <button 
+        className="global-theme-toggle"
+        onClick={toggleTheme}
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      >
+        {theme === 'light' ? '🌙' : '☀️'}
+      </button>
+
       {/* Password Update Modal/Overlay for recovery mode */}
       {isRecoveryMode && (
         <div className="modal-overlay">
@@ -282,7 +294,7 @@ function App() {
               className={`nav-tab ${currentPage === 'analytics' ? 'active' : ''}`}
               onClick={() => setCurrentPage('analytics')}
             >
-              � Analytics
+              📊 Analytics
             </button>
             <button 
               className={`nav-tab ${currentPage === 'expenses' ? 'active' : ''}`}
@@ -294,7 +306,7 @@ function App() {
               className={`nav-tab ${currentPage === 'budget' ? 'active' : ''}`}
               onClick={() => setCurrentPage('budget')}
             >
-              � Budget Overview
+              💵 Budget Overview
             </button>
           </nav>
 
@@ -356,7 +368,7 @@ function App() {
       )}
       
       <footer className="app-footer">
-        <p>Built with React + TypeScript + Supabase</p>
+        <p>React + TypeScript + Supabase</p>
       </footer>
     </div>
   );

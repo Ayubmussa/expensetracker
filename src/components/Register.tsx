@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
 import type { RegisterData } from '../types';
 import './Auth.css';
 
 interface RegisterProps {
   onSwitchToLogin: () => void;
+  onRegisterSuccess?: () => void;
 }
 
-const Register: React.FC<RegisterProps> = ({ onSwitchToLogin }) => {
+const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess }) => {
   const { register, loading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [formData, setFormData] = useState<RegisterData>({
     email: '',
     password: '',
@@ -66,6 +69,8 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin }) => {
       setAuthError(result.error);
     } else if (result.success) {
       setSuccess(true);
+      // Registration was successful, call the success callback
+      onRegisterSuccess?.();
     }
   };
 
@@ -85,10 +90,21 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin }) => {
   if (success) {
     return (
       <div className="auth-container">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="theme-toggle-btn"
+          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+        
         <div className="auth-card">
           <div className="auth-header">
-            <h2>Check Your Email</h2>
-            <p>We've sent you a verification link. Please check your email and click the link to activate your account.</p>
+            <div className="auth-header-content">
+              <h2>Check Your Email</h2>
+              <p>We've sent you a verification link. Please check your email and click the link to activate your account.</p>
+            </div>
           </div>
           
           <div className="auth-success">
@@ -115,10 +131,21 @@ const Register: React.FC<RegisterProps> = ({ onSwitchToLogin }) => {
 
   return (
     <div className="auth-container">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="theme-toggle-btn"
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      >
+        {theme === 'light' ? '🌙' : '☀️'}
+      </button>
+      
       <div className="auth-card">
         <div className="auth-header">
-          <h2>Create Account</h2>
-          <p>Sign up to start tracking your expenses</p>
+          <div className="auth-header-content">
+            <h2>Create Account</h2>
+            <p>Sign up to start tracking your expenses</p>
+          </div>
         </div>
 
         {authError && (

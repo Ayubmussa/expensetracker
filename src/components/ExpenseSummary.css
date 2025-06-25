@@ -1,10 +1,11 @@
 .expense-summary-container {
-  background: #111111;
-  border: 1px solid #333333;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -1px var(--shadow-color);
   margin-bottom: 2rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .summary-header {
@@ -16,17 +17,18 @@
 
 .summary-header h2 {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 600;
 }
 
 .period-selector {
   display: flex;
-  background: #333333;
+  background: var(--bg-tertiary);
   border-radius: 8px;
   padding: 4px;
   gap: 2px;
+  transition: background-color 0.3s ease;
 }
 
 .period-selector button {
@@ -38,17 +40,18 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease-in-out;
-  color: #cccccc;
+  color: var(--text-secondary);
 }
 
 .period-selector button.active {
-  background: #2563eb;
+  background: var(--accent-color);
   color: #ffffff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 2px var(--shadow-color);
 }
 
 .period-selector button:hover:not(.active) {
-  color: #ffffff;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
 }
 
 .summary-cards {
@@ -59,7 +62,7 @@
 }
 
 .summary-card {
-  background: #2563eb;
+  background: var(--accent-color);
   border-radius: 12px;
   padding: 1.5rem;
   color: white;
@@ -68,10 +71,11 @@
   gap: 1rem;
   position: relative;
   overflow: hidden;
+  transition: background-color 0.3s ease;
 }
 
 .summary-card.total-amount {
-  background: #2563eb;
+  background: var(--accent-color);
 }
 
 .summary-card.expense-count {
@@ -117,7 +121,7 @@
 
 .category-breakdown h3 {
   margin: 0 0 1.5rem 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.25rem;
   font-weight: 600;
 }
@@ -129,18 +133,18 @@
 }
 
 .category-item {
-  background: #222222;
+  background: var(--bg-secondary);
   border-radius: 8px;
   padding: 1rem;
-  border: 1px solid #333333;
+  border: 1px solid var(--border-color);
   transition: all 0.2s ease;
 }
 
 .category-item:hover {
-  background: #2a2a2a;
-  border-color: #3b82f6;
+  background: var(--bg-tertiary);
+  border-color: var(--accent-color);
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 8px var(--shadow-color);
 }
 
 .category-item.clickable {
@@ -174,12 +178,12 @@
 
 .category-name {
   font-weight: 600;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .category-amount {
   font-weight: 700;
-  color: #10b981;
+  color: var(--success-color);
   font-size: 1.125rem;
 }
 
@@ -191,7 +195,7 @@
 
 .progress-bar {
   height: 6px;
-  background: #333333;
+  background: var(--border-color);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -206,14 +210,14 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.875rem;
-  color: #cccccc;
+  color: var(--text-secondary);
 }
 
 .loading,
 .no-data {
   text-align: center;
   padding: 3rem;
-  color: #cccccc;
+  color: var(--text-secondary);
   font-size: 1.125rem;
 }
 

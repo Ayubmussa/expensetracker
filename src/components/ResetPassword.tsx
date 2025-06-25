@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
 import type { ResetPasswordData } from '../types';
 import './Auth.css';
 
@@ -9,6 +10,7 @@ interface ResetPasswordProps {
 
 const ResetPassword: React.FC<ResetPasswordProps> = ({ onSwitchToLogin }) => {
   const { resetPassword } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [formData, setFormData] = useState<ResetPasswordData>({
     email: '',
   });
@@ -64,10 +66,21 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onSwitchToLogin }) => {
   if (success) {
     return (
       <div className="auth-container">
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="theme-toggle-btn"
+          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
+        
         <div className="auth-card">
           <div className="auth-header">
-            <h2>Check Your Email</h2>
-            <p>We've sent you a password reset link. Please check your email and follow the instructions to reset your password.</p>
+            <div className="auth-header-content">
+              <h2>Check Your Email</h2>
+              <p>We've sent you a password reset link. Please check your email and follow the instructions to reset your password.</p>
+            </div>
           </div>
           
           <div className="auth-success">
@@ -97,10 +110,21 @@ const ResetPassword: React.FC<ResetPasswordProps> = ({ onSwitchToLogin }) => {
 
   return (
     <div className="auth-container">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="theme-toggle-btn"
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      >
+        {theme === 'light' ? '🌙' : '☀️'}
+      </button>
+      
       <div className="auth-card">
         <div className="auth-header">
-          <h2>Reset Password</h2>
-          <p>Enter your email address and we'll send you a link to reset your password</p>
+          <div className="auth-header-content">
+            <h2>Reset Password</h2>
+            <p>Enter your email address and we'll send you a link to reset your password</p>
+          </div>
         </div>
 
         {authError && (

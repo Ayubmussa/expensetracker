@@ -8,6 +8,7 @@ import {
 import type { ChartOptions } from 'chart.js';
 import { Pie } from 'react-chartjs-2';
 import { expenseService } from '../services/expenseService';
+import { useTheme } from '../hooks/useTheme';
 import type { Expense } from '../types';
 import './BudgetPieChart.css';
 
@@ -20,6 +21,16 @@ interface BudgetPieChartProps {
 const BudgetPieChart: React.FC<BudgetPieChartProps> = ({ refreshTrigger }) => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { theme } = useTheme();
+
+  // Get theme-aware colors
+  const getThemeColors = () => {
+    const textColor = theme === 'dark' ? '#ffffff' : '#1f2937';
+    const backgroundColor = theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.9)';
+    const borderColor = theme === 'dark' ? '#3b82f6' : '#2563eb';
+    
+    return { textColor, backgroundColor, borderColor };
+  };
 
   useEffect(() => {
     const loadExpenses = async () => {
@@ -100,7 +111,7 @@ const BudgetPieChart: React.FC<BudgetPieChartProps> = ({ refreshTrigger }) => {
         labels: {
           padding: 20,
           usePointStyle: true,
-          color: '#ffffff',
+          color: getThemeColors().textColor,
           font: {
             size: 12,
           },
@@ -115,10 +126,10 @@ const BudgetPieChart: React.FC<BudgetPieChartProps> = ({ refreshTrigger }) => {
             return `${label}: $${value.toFixed(2)} (${percentage}%)`;
           },
         },
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        titleColor: '#ffffff',
-        bodyColor: '#ffffff',
-        borderColor: '#3b82f6',
+        backgroundColor: getThemeColors().backgroundColor,
+        titleColor: getThemeColors().textColor,
+        bodyColor: getThemeColors().textColor,
+        borderColor: getThemeColors().borderColor,
         borderWidth: 1,
       },
     },
@@ -168,11 +179,19 @@ const BudgetPieChart: React.FC<BudgetPieChartProps> = ({ refreshTrigger }) => {
       <div className="chart-stats">
         <div className="stat-item">
           <span className="stat-label">Categories:</span>
-          <span className="stat-value">{Object.keys(categoryTotals).length}</span>
+          <span className="stat-value">
+            {Object.keys(categoryTotals).length > 0 
+              ? Object.keys(categoryTotals).join(', ') 
+              : 'None'}
+          </span>
         </div>
         <div className="stat-item">
-          <span className="stat-label">Transactions:</span>
-          <span className="stat-value">{expenses.length}</span>
+          <span className="stat-label">Expenses:</span>
+          <span className="stat-value">
+            {expenses.length > 0 
+              ? expenses.map(expense => expense.description).join(', ')
+              : 'None'}
+          </span>
         </div>
         <div className="stat-item">
           <span className="stat-label">Utilization:</span>

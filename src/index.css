@@ -8,15 +8,31 @@
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: dark;
-  color: #ffffff;
-  background-color: #000000;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+
+/* Default theme variables */
+:root {
+  --bg-primary: #000000;
+  --text-primary: #ffffff;
+}
+
+/* Light theme variables */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg-primary: #ffffff;
+  --text-primary: #1f2937;
+}
+
+/* Dark theme variables */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-primary: #000000;
+  --text-primary: #ffffff;
 }
 
 body {
@@ -26,8 +42,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   font-size: 16px;
-  background-color: #000000;
-  color: #ffffff;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 #root {

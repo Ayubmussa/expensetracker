@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../hooks/useTheme';
 import type { LoginData } from '../types';
 import './Auth.css';
 
 interface LoginProps {
   onSwitchToRegister: () => void;
   onSwitchToReset: () => void;
+  onLoginSuccess?: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onSwitchToReset }) => {
+const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onSwitchToReset, onLoginSuccess }) => {
   const { login, loading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [formData, setFormData] = useState<LoginData>({
     email: '',
     password: '',
@@ -44,6 +47,9 @@ const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onSwitchToReset }) =>
     
     if (!result.success && result.error) {
       setAuthError(result.error);
+    } else if (result.success) {
+      // Login was successful, call the success callback
+      onLoginSuccess?.();
     }
   };
 
@@ -62,10 +68,21 @@ const Login: React.FC<LoginProps> = ({ onSwitchToRegister, onSwitchToReset }) =>
 
   return (
     <div className="auth-container">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        className="theme-toggle-btn"
+        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      >
+        {theme === 'light' ? '🌙' : '☀️'}
+      </button>
+      
       <div className="auth-card">
         <div className="auth-header">
-          <h2>Welcome Back</h2>
-          <p>Sign in to your account to continue tracking your expenses</p>
+          <div className="auth-header-content">
+            <h2>Welcome Back</h2>
+            <p>Sign in to your account to continue tracking your expenses</p>
+          </div>
         </div>
 
         {authError && (

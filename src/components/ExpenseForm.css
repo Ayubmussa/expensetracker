@@ -1,15 +1,16 @@
 .expense-form-container {
-  background: #111111;
-  border: 1px solid #333333;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   padding: 2rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -1px var(--shadow-color);
   margin-bottom: 2rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .expense-form-container h2 {
   margin: 0 0 1.5rem 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 600;
 }
@@ -27,7 +28,7 @@
 
 .form-group label {
   font-weight: 500;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 0.875rem;
 }
 
@@ -35,19 +36,19 @@
 .form-group textarea,
 .form-group select {
   padding: 0.75rem;
-  border: 1px solid #444444;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 1rem;
-  background-color: #222222;
-  color: #ffffff;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out, background-color 0.3s ease;
 }
 
 .form-group input:focus,
 .form-group textarea:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: var(--accent-color);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
@@ -88,13 +89,13 @@
 }
 
 .error-message {
-  color: #ef4444;
+  color: var(--error-color);
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
 
 .submit-button {
-  background: #2563eb;
+  background: var(--accent-color);
   color: white;
   border: none;
   padding: 0.875rem 1.5rem;
@@ -107,7 +108,7 @@
 }
 
 .submit-button:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: var(--accent-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
 }
@@ -139,10 +140,10 @@
 }
 
 .modal-content {
-  background: #111111;
-  border: 1px solid #333333;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 25px -5px var(--shadow-color), 0 10px 10px -5px var(--shadow-color);
   max-width: 98vw;
   max-height: 95vh;
   overflow-y: auto;
@@ -162,13 +163,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  border-bottom: 1px solid #333333;
-  background: linear-gradient(135deg, #1a1a1a, #111111);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
 }
 
 .modal-header h2 {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 600;
   display: flex;
@@ -189,14 +190,14 @@
 }
 
 .close-button:hover {
-  background-color: #333333;
+  background-color: var(--bg-tertiary);
 }
 
 .bulk-expense-form {
   padding: 1rem 1.5rem;
   overflow-y: auto;
   flex: 1;
-  background: #111111;
+  background: var(--card-bg);
 }
 
 .expense-rows {
@@ -212,9 +213,9 @@
   gap: 0.75rem;
   align-items: start;
   padding: 0.75rem;
-  border: 1px solid #333333;
+  border: 1px solid var(--border-color);
   border-radius: 8px;
-  background: #222222;
+  background: var(--bg-secondary);
 }
 
 .row-number {
@@ -223,7 +224,7 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  background: #2563eb;
+  background: var(--accent-color);
   color: white;
   border-radius: 50%;
   font-size: 0.75rem;
@@ -239,15 +240,15 @@
 .expense-row .form-group select {
   padding: 0.4rem 0.6rem;
   font-size: 0.875rem;
-  border: 1px solid #444444;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  background: #1a1a1a;
-  color: #ffffff;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .expense-row .error-text {
   font-size: 0.75rem;
-  color: #ef4444;
+  color: var(--error-color);
 }
 
 .row-actions {
@@ -295,9 +296,9 @@
 }
 
 .quick-action-btn {
-  background: #333333;
-  border: 1px solid #444444;
-  color: #ffffff;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
   padding: 0.4rem 0.6rem;
   border-radius: 6px;
   cursor: pointer;
@@ -311,8 +312,9 @@
 }
 
 .quick-action-btn:hover {
-  background: #444444;
-  border-color: #555555;
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
   transform: translateY(-1px);
 }
 
@@ -327,9 +329,9 @@
 }
 
 .add-row-btn {
-  background: #333333;
-  border: 1px dashed #666666;
-  color: #cccccc;
+  background: var(--bg-tertiary);
+  border: 1px dashed var(--border-color);
+  color: var(--text-secondary);
   padding: 0.75rem 1rem;
   border-radius: 8px;
   cursor: pointer;
@@ -340,9 +342,9 @@
 }
 
 .add-row-btn:hover {
-  background: #444444;
-  border-color: #888888;
-  color: #ffffff;
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: white;
 }
 
 .bulk-summary {

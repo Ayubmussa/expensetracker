@@ -38,10 +38,17 @@ class ExpenseService {
       console.log('Authentication check failed:', error);
       return false;
     }
-  }async getExpenses(filters?: FilterOptions): Promise<Expense[]> {
+  }  async getExpenses(filters?: FilterOptions): Promise<Expense[]> {
+    console.log('ExpenseService.getExpenses called with:', { 
+      shouldUseOfflineMode: this.shouldUseOfflineMode,
+      isOnline: this.isOnline,
+      forceOfflineMode: this.forceOfflineMode 
+    });
+    
     try {
       // Only try Supabase if not in offline mode AND authenticated
       if (!this.shouldUseOfflineMode && await this.isAuthenticated()) {
+        console.log('Fetching expenses from Supabase...');
         // RLS policies will automatically filter by authenticated user
         const { data, error } = await supabase
           .from(TABLES.EXPENSES)
@@ -49,6 +56,7 @@ class ExpenseService {
           .order('date', { ascending: false });
 
         if (error) throw error;
+        console.log(`Retrieved ${data?.length || 0} expenses from Supabase`);
         return this.applyFilters(data || [], filters);
       }
     } catch (error) {
@@ -57,8 +65,9 @@ class ExpenseService {
 
     // Fallback to localStorage for offline mode or when not authenticated
     const expenses = localStorageUtils.getExpenses();
+    console.log(`Retrieved ${expenses.length} expenses from localStorage`);
     return this.applyFilters(expenses, filters);
-  }  async addExpense(expenseData: Omit<Expense, 'id' | 'created_at' | 'updated_at' | 'user_id'>): Promise<Expense> {
+  }async addExpense(expenseData: Omit<Expense, 'id' | 'created_at' | 'updated_at' | 'user_id'>): Promise<Expense> {
     console.log('expenseService: Adding expense', expenseData);
     
     const expense: Omit<Expense, 'user_id'> = {
@@ -199,10 +208,17 @@ class ExpenseService {
     }
 
     localStorageUtils.deleteExpense(expenseId);
-  }async getCategories(): Promise<Category[]> {
+  }  async getCategories(): Promise<Category[]> {
+    console.log('ExpenseService.getCategories called with:', { 
+      shouldUseOfflineMode: this.shouldUseOfflineMode,
+      isOnline: this.isOnline,
+      forceOfflineMode: this.forceOfflineMode 
+    });
+    
     try {
       // Only try Supabase if not in offline mode AND authenticated
       if (!this.shouldUseOfflineMode && await this.isAuthenticated()) {
+        console.log('Fetching categories from Supabase...');
         const { data, error } = await supabase
           .from(TABLES.CATEGORIES)
           .select('*')
@@ -210,10 +226,11 @@ class ExpenseService {
 
         if (error) throw error;
         if (data && data.length > 0) {
-          console.log('Categories loaded from Supabase');
+          console.log(`Retrieved ${data.length} categories from Supabase`);
           // Merge with localStorage categories to include any offline-created ones
           const localCategories = localStorageUtils.getCategories();
           const mergedCategories = this.mergeCategories(data, localCategories);
+          console.log(`Merged to ${mergedCategories.length} total categories`);
           return mergedCategories;
         }
       }
@@ -221,8 +238,9 @@ class ExpenseService {
       console.log('Error fetching categories from Supabase, using localStorage:', error);
     }
 
-    console.log('Using localStorage categories (offline mode)');
-    return localStorageUtils.getCategories();
+    const localCategories = localStorageUtils.getCategories();
+    console.log(`Using ${localCategories.length} localStorage categories (offline mode)`);
+    return localCategories;
   }
   private mergeCategories(supabaseCategories: Category[], localCategories: Category[]): Category[] {
     const mergedMap = new Map<string, Category>();
@@ -316,6 +334,12 @@ class ExpenseService {
         // Trigger UI refresh
         window.dispatchEvent(new CustomEvent('dataSync', { 
           detail: syncResult 
+        }));
+      } else {
+        console.log('Manual sync completed with errors');
+        // Trigger error event
+        window.dispatchEvent(new CustomEvent('dataSyncError', { 
+          detail: syncResult.errors 
         }));
       }
       
