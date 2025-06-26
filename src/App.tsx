@@ -126,18 +126,20 @@ function App() {
     console.log('App - showing auth forms', { userExists: !!user, isRecoveryMode, useOfflineMode });
     return (
       <div className="app">
-        {/* Global Theme Toggle - Always visible */}
-        <button 
-          className="global-theme-toggle"
-          onClick={toggleTheme}
-          title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-        >
-          {theme === 'light' ? '🌙' : '☀️'}
-        </button>
-
         <header className="app-header">
-          <h1>💰 ExpenseTracker</h1>
-          <p>Track your daily expenses with ease</p>
+          <div className="header-content">
+            <div>
+              <h1>💰 ExpenseTracker</h1>
+              <p>Track your expenses with ease</p>
+            </div>
+            <button 
+              className="theme-toggle-btn"
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
+          </div>
         </header>
         
         <main className="app-main">
@@ -175,14 +177,6 @@ function App() {
   console.log('App - showing main expense tracker', { userExists: !!user, isRecoveryMode, useOfflineMode });
   return (
     <div className="app">
-      {/* Global Theme Toggle - Always visible */}
-      <button 
-        className="global-theme-toggle"
-        onClick={toggleTheme}
-        title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-      >
-        {theme === 'light' ? '🌙' : '☀️'}
-      </button>
 
       {/* Password Update Modal/Overlay for recovery mode */}
       {isRecoveryMode && (
@@ -228,52 +222,73 @@ function App() {
           </div>
           <div className="header-actions">
             {user ? (
-              <div className="settings-dropdown" ref={settingsDropdownRef}>
-                <button 
-                  className="settings-btn"
-                  onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
-                >
-                  ⚙️ Settings
-                </button>
-                {showSettingsDropdown && (
-                  <div className="dropdown-menu">
-                    <button 
-                      className="dropdown-item"
-                      onClick={() => {
-                        setShowSettingsDropdown(false);
-                        setShowProfile(true);
-                      }}
-                    >
-                      👤 Profile
-                    </button>
-                    <button 
-                      className="dropdown-item"
-                      onClick={() => {
-                        setShowSettingsDropdown(false);
-                        setShowUpdatePassword(true);
-                      }}
-                    >
-                      🔒 Update Password
-                    </button>
-                    <button 
-                      className="dropdown-item logout-item"
-                      onClick={() => {
-                        setShowSettingsDropdown(false);
-                        handleLogout();
-                      }}
-                    >
-                      🚪 Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+              <>
+                <div className="settings-dropdown" ref={settingsDropdownRef}>
+                  <button 
+                    className="settings-btn"
+                    onClick={() => setShowSettingsDropdown(!showSettingsDropdown)}
+                  >
+                    ⚙️ Settings
+                  </button>
+                  {showSettingsDropdown && (
+                    <div className="dropdown-menu">
+                      <button 
+                        className="dropdown-item"
+                        onClick={() => {
+                          setShowSettingsDropdown(false);
+                          toggleTheme();
+                        }}
+                      >
+                        {theme === 'light' ? '🌙' : '☀️'} Toggle Theme
+                      </button>
+                      <button 
+                        className="dropdown-item"
+                        onClick={() => {
+                          setShowSettingsDropdown(false);
+                          setShowProfile(true);
+                        }}
+                      >
+                        👤 Profile
+                      </button>
+                      <button 
+                        className="dropdown-item"
+                        onClick={() => {
+                          setShowSettingsDropdown(false);
+                          setShowUpdatePassword(true);
+                        }}
+                      >
+                        🔒 Update Password
+                      </button>
+                      <button 
+                        className="dropdown-item logout-item"
+                        onClick={() => {
+                          setShowSettingsDropdown(false);
+                          handleLogout();
+                        }}
+                      >
+                        🚪 Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             ) : (
-              <button 
-                className="switch-mode-btn"
-                onClick={() => setUseOfflineMode(false)}
-              >
-                🌐 Go Online
-              </button>
+              <div className="offline-header-actions">
+                <button 
+                  className="theme-toggle-btn"
+                  onClick={toggleTheme}
+                  title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+                >
+                  {theme === 'light' ? '🌙' : '☀️'}
+                </button>
+                <div className="action-separator"></div>
+                <button 
+                  className="switch-mode-btn"
+                  onClick={() => setUseOfflineMode(false)}
+                >
+                  🌐 Go Online
+                </button>
+              </div>
             )}
           </div>
         </div>
