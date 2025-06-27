@@ -14,3 +14,6 @@ ExpenseTracker-Environment.postman_environment.json
 ExpenseTracker-Postman-Collection.json
 ExpenseTracker_Report.tex
 ExpenseTracker API Collection.json
+
+# Server uploads directory
+server/uploads/

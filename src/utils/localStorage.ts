@@ -1,8 +1,30 @@
 import type { Expense, Category } from '../types';
 
+// Local storage structure for offline receipts
+interface OfflineReceiptData {
+  amount: number;
+  description: string;
+  category: string;
+  date: string;
+  vendor?: string;
+  confidence: number;
+}
+
+interface OfflineReceipt {
+  id: string;
+  expense_id?: string;
+  image_data: string; // Base64 encoded image data
+  original_filename: string;
+  extracted_data: OfflineReceiptData;
+  raw_text?: string;
+  created_at: string;
+  synced: boolean; // Track if synced to online
+}
+
 const STORAGE_KEYS = {
   EXPENSES: 'expenses',
   CATEGORIES: 'categories',
+  RECEIPTS: 'receipts',
   OFFLINE_USER: 'offline_user',
 } as const;
 
@@ -105,6 +127,75 @@ export const localStorageUtils = {
     }
   },
 
+  // Receipt operations
+  getReceipts: (): OfflineReceipt[] => {
+    try {
+      const receipts = localStorage.getItem(STORAGE_KEYS.RECEIPTS);
+      return receipts ? JSON.parse(receipts) : [];
+    } catch (error) {
+      console.error('Error reading receipts from localStorage:', error);
+      return [];
+    }
+  },
+
+  saveReceipts: (receipts: OfflineReceipt[]): void => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.RECEIPTS, JSON.stringify(receipts));
+    } catch (error) {
+      console.error('Error saving receipts to localStorage:', error);
+    }
+  },
+
+  addReceipt: (receipt: OfflineReceipt): void => {
+    try {
+      const receipts = localStorageUtils.getReceipts();
+      receipts.push(receipt);
+      localStorageUtils.saveReceipts(receipts);
+      console.log('localStorage: Added receipt', receipt.id);
+    } catch (error) {
+      console.error('Error adding receipt to localStorage:', error);
+    }
+  },
+
+  linkReceiptToExpense: (receiptId: string, expenseId: string): void => {
+    try {
+      const receipts = localStorageUtils.getReceipts();
+      const receiptIndex = receipts.findIndex(r => r.id === receiptId);
+      if (receiptIndex !== -1) {
+        receipts[receiptIndex].expense_id = expenseId;
+        localStorageUtils.saveReceipts(receipts);
+        console.log('localStorage: Linked receipt to expense', receiptId, expenseId);
+      }
+    } catch (error) {
+      console.error('Error linking receipt to expense in localStorage:', error);
+    }
+  },
+
+  getUnsyncedReceipts: (): OfflineReceipt[] => {
+    try {
+      const receipts = localStorageUtils.getReceipts();
+      return receipts.filter(receipt => !receipt.synced);
+    } catch (error) {
+      console.error('Error getting unsynced receipts from localStorage:', error);
+      return [];
+    }
+  },
+
+  markReceiptsAsSynced: (receiptIds: string[]): void => {
+    try {
+      const receipts = localStorageUtils.getReceipts();
+      receipts.forEach(receipt => {
+        if (receiptIds.includes(receipt.id)) {
+          receipt.synced = true;
+        }
+      });
+      localStorageUtils.saveReceipts(receipts);
+      console.log('localStorage: Marked receipts as synced', receiptIds);
+    } catch (error) {
+      console.error('Error marking receipts as synced in localStorage:', error);
+    }
+  },
+
   // Clear only temporary data (preserves user expenses and categories)
   clearTempData: (): void => {
     try {
@@ -128,6 +219,8 @@ export const localStorageUtils = {
     }
   },
 };
+
+export type { OfflineReceipt, OfflineReceiptData };
 
 function getDefaultCategories(): Category[] {
   return [

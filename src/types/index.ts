@@ -23,6 +23,27 @@ export interface ExpenseFormData {
   date: string;
 }
 
+export interface ReceiptData {
+  amount: number;
+  description: string;
+  category: string;
+  date: string;
+  vendor?: string;
+  confidence: number;
+}
+
+export interface Receipt {
+  id: string;
+  user_id: string;
+  expense_id?: string;
+  image_url: string;
+  original_filename: string;
+  extracted_data: ReceiptData;
+  raw_text?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface ExpenseSummary {
   totalAmount: number;
   expenseCount: number;

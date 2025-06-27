@@ -11,6 +11,7 @@
   --accent-hover: #2563eb;
   --accent-color-light: rgba(59, 130, 246, 0.2);
   --success-color: #10b981;
+  --success-hover: #059669;
   --success-color-light: rgba(16, 185, 129, 0.2);
   --warning-color: #f59e0b;
   --error-color: #ef4444;
@@ -89,6 +90,7 @@
   --accent-hover: #2563eb;
   --accent-color-light: rgba(59, 130, 246, 0.2);
   --success-color: #10b981;
+  --success-hover: #059669;
   --success-color-light: rgba(16, 185, 129, 0.2);
   --warning-color: #f59e0b;
   --error-color: #ef4444;

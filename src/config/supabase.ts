@@ -14,4 +14,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export const TABLES = {
   EXPENSES: 'expenses',
   CATEGORIES: 'categories',
+  PROFILES: 'profiles',
+  RECEIPTS: 'receipts',
+} as const;
+
+// Storage bucket names
+export const STORAGE_BUCKETS = {
+  RECEIPTS: 'receipt-images',
 } as const;

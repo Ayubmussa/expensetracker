@@ -124,6 +124,53 @@
   transform: translateY(0);
 }
 
+/* Receipt Scanner Styles */
+.receipt-scanner-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  transition: all 0.3s ease;
+}
+
+.receipt-scanner-group:hover {
+  border-color: var(--accent-color);
+  background: var(--card-bg);
+}
+
+.receipt-scanner-button {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.receipt-scanner-button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+.receipt-scanner-hint {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-align: center;
+  font-style: italic;
+}
+
 /* Bulk Expense Form Styles */
 .modal-overlay {
   position: fixed;

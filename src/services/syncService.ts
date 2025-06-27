@@ -1,11 +1,13 @@
 import { supabase, TABLES } from '../config/supabase';
 import { localStorageUtils } from '../utils/localStorage';
+import { supabaseReceiptService } from './supabaseReceiptService';
 import type { Category } from '../types';
 
 export interface SyncResult {
   success: boolean;
   syncedExpenses: number;
   syncedCategories: number;
+  syncedReceipts: number;
   errors: string[];
 }
 
@@ -19,6 +21,7 @@ class SyncService {
         success: false,
         syncedExpenses: 0,
         syncedCategories: 0,
+        syncedReceipts: 0,
         errors: ['Sync already in progress']
       };
     }
@@ -28,6 +31,7 @@ class SyncService {
       success: true,
       syncedExpenses: 0,
       syncedCategories: 0,
+      syncedReceipts: 0,
       errors: []
     };
 
@@ -46,7 +50,10 @@ class SyncService {
       await this.syncExpenses(result);
 
       // Sync categories
-      await this.syncCategories(result);      // If sync was successful, optionally clear local data or mark as synced
+      await this.syncCategories(result);
+
+      // Sync receipts
+      await this.syncReceipts(result);      // If sync was successful, optionally clear local data or mark as synced
       if (result.success && result.errors.length === 0) {
         console.log('Sync completed successfully:', result);
         // Clean up synced data from localStorage to avoid duplicates
@@ -187,6 +194,95 @@ class SyncService {
     }
   }
 
+  private async syncReceipts(result: SyncResult): Promise<void> {
+    try {
+      const unsyncedReceipts = localStorageUtils.getUnsyncedReceipts();
+      if (unsyncedReceipts.length === 0) {
+        console.log('No offline receipts to sync');
+        return;
+      }
+
+      console.log(`Syncing ${unsyncedReceipts.length} offline receipts...`);
+
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const syncedReceiptIds: string[] = [];
+
+      for (const offlineReceipt of unsyncedReceipts) {
+        try {
+          // Convert base64 back to File for upload
+          const imageBlob = await this.base64ToBlob(offlineReceipt.image_data);
+          const imageFile = new File([imageBlob], offlineReceipt.original_filename, {
+            type: imageBlob.type || 'image/jpeg'
+          });
+
+          // Upload to Supabase
+          const saveResult = await supabaseReceiptService.processAndSaveReceipt(
+            imageFile,
+            user.id,
+            offlineReceipt.extracted_data,
+            offlineReceipt.raw_text
+          );
+
+          if (saveResult.success && saveResult.receipt) {
+            // If this receipt was linked to an offline expense, we need to link it to the online expense
+            if (offlineReceipt.expense_id) {
+              // Try to find the corresponding online expense by matching data
+              const { data: onlineExpenses } = await supabase
+                .from(TABLES.EXPENSES)
+                .select('id, amount, description, date')
+                .eq('user_id', user.id)
+                .eq('amount', offlineReceipt.extracted_data.amount)
+                .eq('description', offlineReceipt.extracted_data.description)
+                .eq('date', offlineReceipt.extracted_data.date);
+
+              if (onlineExpenses && onlineExpenses.length > 0) {
+                // Link to the first matching expense
+                await supabaseReceiptService.linkReceiptToExpense(
+                  saveResult.receipt.id,
+                  onlineExpenses[0].id
+                );
+              }
+            }
+
+            syncedReceiptIds.push(offlineReceipt.id);
+            result.syncedReceipts++;
+            console.log(`Successfully synced receipt: ${offlineReceipt.id}`);
+          } else {
+            console.error(`Failed to sync receipt ${offlineReceipt.id}:`, saveResult.error);
+            result.errors.push(`Failed to sync receipt ${offlineReceipt.original_filename}: ${saveResult.error}`);
+          }
+        } catch (receiptError) {
+          console.error(`Error syncing receipt ${offlineReceipt.id}:`, receiptError);
+          result.errors.push(`Failed to sync receipt ${offlineReceipt.original_filename}: ${receiptError instanceof Error ? receiptError.message : 'Unknown error'}`);
+        }
+      }
+
+      // Mark successfully synced receipts as synced in localStorage
+      if (syncedReceiptIds.length > 0) {
+        localStorageUtils.markReceiptsAsSynced(syncedReceiptIds);
+        console.log(`Marked ${syncedReceiptIds.length} receipts as synced`);
+      }
+
+    } catch (error) {
+      console.error('Error syncing receipts:', error);
+      result.success = false;
+      result.errors.push(`Receipt sync failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Convert base64 data URL to Blob
+   */
+  private async base64ToBlob(base64Data: string): Promise<Blob> {
+    const response = await fetch(base64Data);
+    return await response.blob();
+  }
+
   private isDefaultCategory(category: Category): boolean {
     // Check if this is one of the default categories
     const defaultCategoryNames = [
@@ -283,7 +379,7 @@ class SyncService {
   private async cleanupSyncedData(syncResult: SyncResult): Promise<void> {
     try {
       // Only cleanup if we actually synced some data
-      if (syncResult.syncedExpenses === 0 && syncResult.syncedCategories === 0) {
+      if (syncResult.syncedExpenses === 0 && syncResult.syncedCategories === 0 && syncResult.syncedReceipts === 0) {
         return;
       }
 
@@ -332,6 +428,14 @@ class SyncService {
           localStorageUtils.saveCategories(remainingCategories);
           console.log(`Cleaned up ${localCategories.length - remainingCategories.length} synced categories from localStorage`);
         }
+      }
+
+      // Clean up synced receipts
+      if (syncResult.syncedReceipts > 0) {
+        const localReceipts = localStorageUtils.getReceipts();
+        const remainingReceipts = localReceipts.filter(receipt => !receipt.synced);
+        localStorageUtils.saveReceipts(remainingReceipts);
+        console.log(`Cleaned up ${localReceipts.length - remainingReceipts.length} synced receipts from localStorage`);
       }
 
     } catch (error) {

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { expenseService } from '../services/expenseService';
-import type { Category, ExpenseFormData } from '../types';
+import { receiptService } from '../services/receiptService';
+import ReceiptScanner from './ReceiptScanner';
+import type { Category, ExpenseFormData, ReceiptData } from '../types';
 import './ExpenseForm.css';
 
 interface ExpenseFormProps {
@@ -18,6 +20,8 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
   const [showNewCategoryModal, setShowNewCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryIcon, setNewCategoryIcon] = useState('💰');
+  const [showReceiptScanner, setShowReceiptScanner] = useState(false);
+  const [currentReceiptId, setCurrentReceiptId] = useState<string | null>(null);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -62,12 +66,23 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
 
     setIsSubmitting(true);
     try {
-      await expenseService.addExpense({
+      const newExpense = await expenseService.addExpense({
         amount: parseFloat(formData.amount),
         description: formData.description.trim(),
         category: formData.category,
         date: formData.date,
       });
+
+      // If we have a receipt ID, link it to the newly created expense
+      if (currentReceiptId && newExpense.id) {
+        try {
+          await receiptService.linkReceiptToExpense(currentReceiptId, newExpense.id);
+          console.log('Receipt linked to expense successfully');
+        } catch (error) {
+          console.warn('Failed to link receipt to expense:', error);
+          // Don't fail the whole operation if receipt linking fails
+        }
+      }
 
       // Reset form
       setFormData({
@@ -76,6 +91,9 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
         category: categories[0]?.name || '',
         date: new Date().toISOString().split('T')[0],
       });
+
+      // Reset receipt ID
+      setCurrentReceiptId(null);
 
       onExpenseAdded();
     } catch (error) {
@@ -134,6 +152,24 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
     setShowNewCategoryModal(false);
     setNewCategoryName('');
     setNewCategoryIcon('💰');
+  };
+
+  const handleReceiptProcessed = (receiptData: ReceiptData, receiptId?: string) => {
+    // Update form data with extracted receipt data
+    setFormData(prev => ({
+      ...prev,
+      amount: receiptData.amount.toString(),
+      description: receiptData.description || receiptData.vendor || prev.description,
+      category: receiptData.category || prev.category,
+      date: receiptData.date || prev.date,
+    }));
+
+    // Store receipt ID for linking to expense later
+    setCurrentReceiptId(receiptId || null);
+
+    // Clear any existing errors
+    setErrors({});
+    setShowReceiptScanner(false);
   };
 
   const selectedCategory = categories.find(cat => cat.name === formData.category);
@@ -211,6 +247,36 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
           {errors.date && <span className="error-message">{errors.date}</span>}
         </div>
 
+        <div className="form-group receipt-scanner-group">
+          <button
+            type="button"
+            onClick={() => setShowReceiptScanner(true)}
+            className="receipt-scanner-button"
+          >
+            📷 Scan Receipt
+          </button>
+          <span className="receipt-scanner-hint">Take a photo or upload an image to extract expense data</span>
+          
+          {process.env.NODE_ENV === 'development' && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const { testTesseractInstallation } = await import('../utils/receiptTestUtils');
+                  const result = await testTesseractInstallation();
+                  alert(`Tesseract test: ${result.success ? 'PASSED' : 'FAILED'}${result.error ? ` - ${result.error}` : ''}`);
+                } catch (error) {
+                  alert(`Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
+              }}
+              className="test-button"
+              style={{ marginLeft: '10px', fontSize: '12px', padding: '4px 8px' }}
+            >
+              🧪 Test OCR
+            </button>
+          )}
+        </div>
+
         <button
           type="submit"
           disabled={isSubmitting}
@@ -253,6 +319,13 @@ const ExpenseForm: React.FC<ExpenseFormProps> = ({ onExpenseAdded }) => {
               </button>
             </div>
           </div>
+        )}
+
+        {showReceiptScanner && (
+          <ReceiptScanner
+            onReceiptProcessed={handleReceiptProcessed}
+            onClose={() => setShowReceiptScanner(false)}
+          />
         )}
       </form>
     </div>

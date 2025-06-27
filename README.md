@@ -32,6 +32,8 @@ A modern React TypeScript expense tracking application with **dual-mode operatio
 - ✅ **Complete Expense Management**: 
   - Add, edit, and delete expenses in both modes
   - Bulk expense entry for adding multiple expenses at once
+  - **📸 Receipt Scanning**: Client-side OCR with Tesseract.js to automatically extract expense data from receipt photos
+  - Smart category matching against your existing categories database
   - Category-based organization with color coding
   - Real-time spending summaries and breakdowns
 
@@ -50,7 +52,8 @@ A modern React TypeScript expense tracking application with **dual-mode operatio
 ## Tech Stack
 
 - **Frontend**: React 18 + TypeScript + Vite
-- **Backend**: Supabase (PostgreSQL)
+- **Backend**: Supabase (PostgreSQL) for data storage and authentication
+- **Receipt Processing**: Client-side Tesseract.js OCR
 - **Styling**: Modern CSS with custom components
 - **State Management**: React Hooks
 - **Build Tool**: Vite
@@ -83,21 +86,41 @@ Edit `.env` and add your Supabase credentials:
 
 4. Start the development server:
 ```bash
-npm run dev
+# Run both frontend and backend servers
+npm run dev:all
+
+# Or run them separately:
+npm run dev      # Frontend only (port 5173)
+npm run server   # Backend only (port 3001)
 ```
+
+### Receipt Scanning Feature
+
+The receipt scanning feature uses client-side OCR and allows users to:
+- 📷 Take photos using device camera (mobile/desktop)
+- 📁 Upload receipt images (JPEG, PNG, GIF, PDF)
+- � Automatically extract amount, date, vendor, and category using Tesseract.js
+- 🎯 Smart category matching against your database categories with keyword fallback
+- ✏️ Manual correction if extraction fails
+- ✅ One-click expense creation from receipt data
+- 💾 Offline receipt storage with automatic sync when online
+
+**Requirements**: Camera access for photo capture, or file system access for uploads. All processing happens in the browser.
 
 ## Project Structure
 
 ```
 src/
 ├── components/           # React components
-│   ├── ExpenseForm.tsx  # Form for adding expenses
+│   ├── ExpenseForm.tsx  # Form for adding expenses (with receipt scanner)
 │   ├── ExpenseList.tsx  # List and filter expenses
-│   └── ExpenseSummary.tsx # Summary statistics
+│   ├── ExpenseSummary.tsx # Summary statistics
+│   └── ReceiptScanner.tsx # Receipt scanning and OCR processing
 ├── config/              # Configuration files
 │   └── supabase.ts     # Supabase client setup
 ├── services/            # Business logic
-│   └── expenseService.ts # Expense CRUD operations
+│   ├── expenseService.ts # Expense CRUD operations
+│   └── receiptService.ts # Client-side receipt processing with OCR
 ├── types/               # TypeScript type definitions
 │   └── index.ts        # Application types
 ├── utils/               # Utility functions
@@ -107,7 +130,7 @@ src/
 
 ## Available Scripts
 
-- `npm run dev` - Start development server
+- `npm run dev` - Start development server (frontend only - no backend needed)
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
