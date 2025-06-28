@@ -14,6 +14,7 @@ ExpenseTracker-Environment.postman_environment.json
 ExpenseTracker-Postman-Collection.json
 ExpenseTracker_Report.tex
 ExpenseTracker API Collection.json
-
-# Server uploads directory
-server/uploads/
+RECEIPT_SCANNER_FIXES.md
+supabase_receipts_migration.sql
+RECEIPT_SCANNER_TESTING.md
+API_DOCUMENTATION.md
