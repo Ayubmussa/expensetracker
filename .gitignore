@@ -5,7 +5,6 @@ dist
 tsconfig.node.json
 tsconfig.json
 package-lock.json
-package.json
 tsconfig.app.json
 PASSWORD_RESET_FLOW.md
 APP_FLOWCHART.md
